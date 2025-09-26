@@ -30,7 +30,7 @@ def load_data(train_path,test_path):
 
 
 def convert_dtype(df,config):
-    '''Convert data type of datetime''' 
+    '''Convert data type of datetime'''  
     for col,_ in config.get("convert_dtypes",{}).items():
         if col in df.columns:
             df[col] = pd.to_datetime(df[col])
