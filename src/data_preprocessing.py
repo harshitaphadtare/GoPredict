@@ -119,7 +119,9 @@ if __name__ == '__main__':
     # Save processed data
     train_output_path = "data/processed/eda_processed_train.csv"
     test_output_path = "data/processed/eda_processed_test.csv"
+    
+    print("Starting Feature Engineering pipeline...")
     save_data(train_df, test_df, train_output_path, test_output_path)
     
-    logging.info("Preprocessing complete. Processed files saved!")
-
+    logging.info(". ")
+    print("[OK]Preprocessing completed successfully!!")

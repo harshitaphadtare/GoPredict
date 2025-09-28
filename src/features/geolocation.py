@@ -120,8 +120,5 @@ def clustering(train_df,test_df):
     logging.info("Adding cluster features to dataframes...")
     add_cluster_features(train_df,test_df,coordinates,labels)
 
-    logging.info("Visualizing clusters...")
     logging.info("Saved HTML Files in gmaps/...")
     
-    visualize_clusters(coordinates,db)
-    logging.info("Clustering complete!")

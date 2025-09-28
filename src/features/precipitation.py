@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-def add_precipitation_data(combine, precep_path=None):
+def extract_precipitation_data(combine, precep_path=None):
     '''Add precipitation values to train/test df (updates in place)'''
     
     # If no path provided, try to find the precipitation.csv file
