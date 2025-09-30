@@ -66,16 +66,18 @@ def label_clusters(db):
 
 def visualize_clusters(coordinates,db):
     '''Generate heatmaps for each cluster using gmplot'''
-
-    for i in range(max(db.labels_)+1):
-        cluster = coordinates.loc[np.argwhere(db.labels_ == i).flatten()]
-        gmap = gmplot.GoogleMapPlotter(
-            cluster.lat.sample(1).values[0],
-            cluster.lng.sample(1).values[0],
-            12
-        )
-        gmap.heatmap(cluster.lat,cluster.lng)
-        gmap.draw(f'gmaps/cluster{i}.html')
+    try:
+        for i in range(max(db.labels_)+1):
+            cluster = coordinates.loc[np.argwhere(db.labels_ == i).flatten()]
+            gmap = gmplot.GoogleMapPlotter(
+                cluster.lat.sample(1).values[0],
+                cluster.lng.sample(1).values[0],
+                12
+            )
+            gmap.heatmap(cluster.lat,cluster.lng)
+            gmap.draw(f'gmaps/cluster{i}.html')
+    except Exception as e:
+        logging.warning(f"Could not generate cluster visualizations: {e}")
 
 
 def add_cluster_features(train_df,test_df,coordinates,labels):

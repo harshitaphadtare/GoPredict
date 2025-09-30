@@ -44,6 +44,10 @@ def add_gmaps_features(combine_df, train_gmaps_path, test_gmaps_path):
     # Load pre-generated gmaps data
     gmaps_train = pd.read_csv(train_gmaps_path, index_col='row_id')
     gmaps_test = pd.read_csv(test_gmaps_path, index_col='row_id')
+
+    # Drop rows with NaNs in gmaps metrics from source files
+    gmaps_train = gmaps_train.dropna(subset=["gmaps_distance","gmaps_duration"])  
+    gmaps_test = gmaps_test.dropna(subset=["gmaps_distance","gmaps_duration"])  
     
     # Add gmaps features to train data
     train_df = combine_df[0]
@@ -62,6 +66,10 @@ def add_gmaps_features(combine_df, train_gmaps_path, test_gmaps_path):
         df.loc[TI_df.index,"gmaps_distance"] = TI_df.manhattan
         # Approximate gmaps_duration 
         df.loc[TI_df.index,"gmaps_duration"] = TI_df.manhattan/11.0
+    
+    # Finally, drop any rows that still have NaNs in gmaps metrics
+    train_df.dropna(subset=["gmaps_distance","gmaps_duration"], inplace=True)
+    test_df.dropna(subset=["gmaps_distance","gmaps_duration"], inplace=True)
     
     return combine_df
 
@@ -103,9 +111,12 @@ def marking_outliers(combine_df):
 def save_feature_eng_data(train_df, test_df, train_output_path, test_output_path):
     '''Save Feature engineered train and test data to specified paths.'''
     
-    # Save feature engineered data
-    train_df.to_csv(train_output_path)
-    test_df.to_csv(test_output_path)
+    train_df.index.name = 'row_id'
+    test_df.index.name = 'row_id'
+
+    # Save feature engineered data with index label
+    train_df.to_csv(train_output_path, index=True, index_label='row_id')
+    test_df.to_csv(test_output_path, index=True, index_label='row_id')
     
     logging.info(f"Feature engineered train data saved to: {train_output_path}")
     logging.info(f"Feature engineered test data saved to: {test_output_path}")

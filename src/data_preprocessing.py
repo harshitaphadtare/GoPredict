@@ -104,8 +104,13 @@ def save_data(train_df, test_df, train_output_path, test_output_path):
     '''Save processed train and test data to specified paths.'''
     os.makedirs(os.path.dirname(train_output_path), exist_ok=True)
     os.makedirs(os.path.dirname(test_output_path), exist_ok=True)
-    train_df.to_csv(train_output_path, index=False)
-    test_df.to_csv(test_output_path, index=False)
+    
+    # Preserve row_id as index
+    train_df.index.name = 'row_id'
+    test_df.index.name = 'row_id'
+    
+    train_df.to_csv(train_output_path, index=True, index_label='row_id')
+    test_df.to_csv(test_output_path, index=True, index_label='row_id')
     
 
 

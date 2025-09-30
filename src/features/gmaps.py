@@ -124,6 +124,9 @@ def merge_gmaps_data():
             # Concatenate all train dataframes
             merged_train = pd.concat(train_dfs, ignore_index=True)
             
+            # Drop rows with NaNs in gmaps columns
+            merged_train = merged_train.dropna(subset=["gmaps_distance","gmaps_duration"]) 
+            
             # Save merged train data with row_id as index
             train_output_path = gmaps_dir / "gmaps_train_data.csv"
             merged_train.to_csv(train_output_path, index=False)
@@ -153,6 +156,9 @@ def merge_gmaps_data():
             
             # Concatenate all test dataframes
             merged_test = pd.concat(test_dfs, ignore_index=True)
+            
+            # Drop rows with NaNs in gmaps columns
+            merged_test = merged_test.dropna(subset=["gmaps_distance","gmaps_duration"]) 
             
             # Save merged test data with row_id as index
             test_output_path = gmaps_dir / "gmaps_test_data.csv"
