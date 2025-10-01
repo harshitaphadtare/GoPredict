@@ -160,7 +160,15 @@ export default function Home() {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {typeof predicted === "number" && isFinite(predicted)
-                      ? `${Math.floor(predicted / 60)}h ${Math.round(predicted % 60)}m`
+                      ? (() => {
+                          const total = Math.round(predicted);
+                          const hours = Math.floor(total / 60);
+                          const mins = total % 60;
+                          // If 60 minutes exactly, roll up to 1h 0m
+                          const adjHours = mins === 60 ? hours + 1 : hours;
+                          const adjMins = mins === 60 ? 0 : mins;
+                          return `${adjHours}h ${adjMins}m`;
+                        })()
                       : "--"}
                   </p>
                 </div>
@@ -200,6 +208,34 @@ export default function Home() {
               city={currentCity}
               placeholder="Search for end location..."
             />
+            
+            {/* City Switcher */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={currentCity === 'new_york' ? 'default' : 'outline'}
+                onClick={() => {
+                  setCurrentCity('new_york');
+                  setFromLocation(null);
+                  setToLocation(null);
+                  setFromId('');
+                  setToId('');
+                }}
+              >
+                New York City
+              </Button>
+              <Button
+                variant={currentCity === 'san_francisco' ? 'default' : 'outline'}
+                onClick={() => {
+                  setCurrentCity('san_francisco');
+                  setFromLocation(null);
+                  setToLocation(null);
+                  setFromId('');
+                  setToId('');
+                }}
+              >
+                San Francisco
+              </Button>
+            </div>
             
             <div className="w-full">
               <label htmlFor="start_time" className="mb-2 block text-sm font-medium text-foreground/80">

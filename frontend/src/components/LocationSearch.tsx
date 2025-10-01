@@ -88,6 +88,8 @@ export function LocationSearch({
     onLocationSelect(location);
     onChange(location.name);
     setIsOpen(false);
+    // Blur input to ensure dropdown closes and user doesn't need to click twice
+    inputRef.current?.blur();
   };
 
   // Handle input change
@@ -123,6 +125,13 @@ export function LocationSearch({
     if (e.key === 'Escape') {
       setIsOpen(false);
       inputRef.current?.blur();
+    }
+    if (e.key === 'Enter') {
+      // Select first result on Enter for faster UX
+      if (searchResults.length > 0) {
+        handleLocationSelect(searchResults[0]);
+        e.preventDefault();
+      }
     }
   };
 
