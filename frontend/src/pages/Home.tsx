@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { LocationSearch } from "@/components/LocationSearch";
-import { GoogleMap } from "@/components/GoogleMap";
+import LeafletMap from "@/components/LeafletMap";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
@@ -176,10 +176,10 @@ export default function Home() {
             </div>
 
             {/* Map */}
-            <GoogleMap 
-              from={fromLocation} 
-              to={toLocation} 
-              animateKey={`${animKey}-${fromLocation?.id}-${toLocation?.id}`} 
+            <LeafletMap
+              from={fromLocation}
+              to={toLocation}
+              animateKey={`${animKey}-${fromLocation?.id}-${toLocation?.id}`}
             />
           </div>
 
