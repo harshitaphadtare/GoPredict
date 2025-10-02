@@ -2,6 +2,26 @@ import React, { useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
+// Fix for default markers not showing in bundled environments
+delete (L.Icon.Default.prototype as any)._getIconUrl
+
+// Create custom colored markers
+const createCustomIcon = (color: string) => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="
+      background-color: ${color};
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    "></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  })
+}
+
 export type GeoPoint = {
   name?: string
   lat: number
@@ -53,10 +73,18 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
       markers.forEach(m => m.remove())
       markers = []
       if (from) {
-        markers.push(L.marker([from.lat, from.lon]).addTo(map))
+        const startMarker = L.marker([from.lat, from.lon], {
+          icon: createCustomIcon('#10b981') // Green for start
+        }).addTo(map)
+        startMarker.bindPopup(`<b>Start:</b> ${from.name || 'Start Location'}`)
+        markers.push(startMarker)
       }
       if (to) {
-        markers.push(L.marker([to.lat, to.lon]).addTo(map))
+        const endMarker = L.marker([to.lat, to.lon], {
+          icon: createCustomIcon('#ef4444') // Red for end
+        }).addTo(map)
+        endMarker.bindPopup(`<b>End:</b> ${to.name || 'End Location'}`)
+        markers.push(endMarker)
       }
     }
 
@@ -70,38 +98,29 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
         ],
         { color: '#2563eb', weight: 3, opacity: 0.85 }
       ).addTo(map)
-      // @ts-ignore
-      if ((routeLayer as any).bringToFront) (routeLayer as any).bringToFront()
     }
 
     const fetchRoute = async () => {
       if (!from || !to) return
+      const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY
+      if (!apiKey) {
+        drawStraight()
+        return
+      }
+      
       try {
-        const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY
-        if (apiKey) {
-          // Geoapify routing
-          // IMPORTANT: Geoapify expects lon,lat order in waypoints
-          const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lon},${from.lat}|${to.lon},${to.lat}&mode=drive&format=geojson&apiKey=${apiKey}`
-          const res = await fetch(url)
-          if (!res.ok) throw new Error(`Routing HTTP ${res.status}`)
-          const data = await res.json()
-          // Validate geometry exists
-          const hasFeatures = data && data.features && data.features.length > 0
-          if (!hasFeatures) throw new Error('No route geometry')
-          const feature = data.features[0]
-          if (routeLayer) routeLayer.remove()
-          routeLayer = L.geoJSON(feature, {
-            style: { color: '#2563eb', weight: 4, opacity: 0.95 },
-          }).addTo(map)
-          // ensure route is above tiles
-          // @ts-ignore
-          if ((routeLayer as any).bringToFront) (routeLayer as any).bringToFront()
-        } else {
-          // No key → draw straight line
-          drawStraight()
-        }
-      } catch (e) {
-        // On any error → draw straight line
+        const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lon},${from.lat}|${to.lon},${to.lat}&mode=drive&format=geojson&apiKey=${apiKey}`
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        
+        if (!data?.features?.[0]) throw new Error('No route')
+        
+        if (routeLayer) routeLayer.remove()
+        routeLayer = L.geoJSON(data.features[0], {
+          style: { color: '#2563eb', weight: 4, opacity: 0.95 },
+        }).addTo(map)
+      } catch {
         drawStraight()
       }
     }
