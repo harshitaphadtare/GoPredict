@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
 import { Clock, MapPin, Car } from "lucide-react";
+import Footer from "@/components/Footer";
 
 type Location = {
   id: string;
@@ -272,9 +273,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto w-full border-t border-border/70 bg-card/70 py-3 text-center text-xs text-foreground/70 backdrop-blur">
-        Made by Harshita Phadtare
-      </footer>
+      <Footer />
     </div>
   );
 }
