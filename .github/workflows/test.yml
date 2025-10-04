@@ -119,6 +119,9 @@ jobs:
             sleep 1
           done
           curl -f http://localhost:8000/api/health
+      - name: Install frontend dependencies
+        run: pnpm install
+        working-directory: frontend
       - run: pnpm --filter gopredict-frontend build
         env:
           VITE_API_URL: http://localhost:8000
