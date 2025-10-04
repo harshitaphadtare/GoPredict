@@ -103,10 +103,7 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
-        cache: 'npm'
-        cache-dependency-path: |
-          frontend/package-lock.json
-          backend/package-lock.json
+        # Do not enable cache at repo root to avoid lockfile requirement
     
     - name: Install backend dependencies
       working-directory: ./backend
@@ -120,8 +117,14 @@ jobs:
       working-directory: ./backend
       run: |
         npm start &
-        sleep 10
-        curl -f http://localhost:8000/api/health || exit 1
+        echo "Waiting for backend to be ready..."
+        for i in {1..60}; do
+          if curl -fsS http://localhost:8000/api/health >/dev/null; then
+            echo "Backend is up"; break; fi
+          sleep 1
+        done
+        # Final assert
+        curl -f http://localhost:8000/api/health
       env:
         PORT: 8000
     
