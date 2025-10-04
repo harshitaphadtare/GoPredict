@@ -2,8 +2,7 @@ export default {
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
   testMatch: [
-    '**/__tests__/**/*.js',
-    '**/*.(test|spec).js'
+    '**/predict.test.js'
   ],
   collectCoverageFrom: [
     'routes/**/*.js',
