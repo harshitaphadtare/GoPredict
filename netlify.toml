@@ -1,0 +1,11 @@
+# Netlify configuration
+
+[build]
+  # This command is run to build the site
+  command = "npm run build --prefix frontend"
+  # This is the directory that contains the built site
+  publish = "frontend/dist"
+
+[build.environment]
+  # Omit these keys from Netlify's secret scanning, as they are safe to be public.
+  SECRETS_SCAN_OMIT_KEYS = ["VITE_API_URL", "VITE_GEOAPIFY_API_KEY"]
