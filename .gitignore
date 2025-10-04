@@ -1,5 +1,8 @@
 notebooks/gmaps/
 
+#node modules
+node_modules/
+
 # Environment variables
 .env
 .env.local
