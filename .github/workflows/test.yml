@@ -105,6 +105,9 @@ jobs:
       - run: pnpm --filter gopredict-backend start &
         env:
           PORT: 8000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          NODE_ENV: 'development'
       - run: |
           echo "Waiting for backend to be ready..."
           for i in {1..60}; do
