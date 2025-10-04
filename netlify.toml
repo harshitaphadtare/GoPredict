@@ -1,6 +1,6 @@
 [build]
 base = "frontend"
-command = "chmod +x node_modules/.bin/vite && npm ci && npm run build"
+command = "npm ci && npm run build"
 publish = "frontend/dist"
 
 
