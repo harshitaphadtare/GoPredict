@@ -3,7 +3,7 @@
 
 [build]
   base = "frontend"
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "pnpm install && pnpm run build"
   publish = "dist"
 
 [[redirects]]
