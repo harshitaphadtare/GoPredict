@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { LocationSearch } from "@/components/LocationSearch";
 import LeafletMap from "@/components/LeafletMap";
 import { Button } from "@/components/ui/button";
