@@ -1,4 +1,4 @@
-const NodeCache = require('node-cache');
+import NodeCache from 'node-cache';
 
 // Initialize cache with 30 minute TTL (time to live)
 const predictionCache = new NodeCache({ 
@@ -58,7 +58,7 @@ function estimateTravelTime(distanceKm, startTime, city) {
   return Math.max(5, timeMinutes * (1 + variation));
 }
 
-export function predictRoute(req, res) {
+export const predictRoute = (req, res) => {
   try {
     const { from, to, startTime, city } = req.body;
     
@@ -123,7 +123,7 @@ export function predictRoute(req, res) {
 }
 
 // Add cache stats to health check
-export function healthCheck(req, res) {
+export const healthCheck = (req, res) => {
   const stats = predictionCache.getStats();
   res.json({
     status: 'healthy',
