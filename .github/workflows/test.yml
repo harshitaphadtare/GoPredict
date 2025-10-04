@@ -18,15 +18,17 @@ jobs:
         node-version: [18.x, 20.x]
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run test:run
-      - run: npm run test:coverage
+          cache: "pnpm"
+      - run: pnpm install
+      - run: pnpm run typecheck
+      - run: pnpm run test:run
+      - run: pnpm run test:coverage
       - uses: codecov/codecov-action@v4
         with:
           file: ./frontend/coverage/lcov.info
@@ -45,14 +47,16 @@ jobs:
         node-version: [18.x, 20.x]
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-      - run: npm test
-      - run: npm run test:coverage
+          cache: "pnpm"
+      - run: pnpm install
+      - run: pnpm test
+      - run: pnpm run test:coverage
       - uses: codecov/codecov-action@v4
         with:
           file: ./backend/coverage/lcov.info
@@ -90,15 +94,18 @@ jobs:
     needs: [frontend-tests, backend-tests]
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: "20.x"
-      - run: npm install
-        working-directory: ./backend
-      - run: npm install
-        working-directory: ./frontend
+          cache: "pnpm"
+      - run: pnpm install
+      - run: pnpm --filter gopredict-backend start &
+        env:
+          PORT: 8000
       - run: |
-          npm start &
           echo "Waiting for backend to be ready..."
           for i in {1..60}; do
             if curl -fsS http://localhost:8000/api/health >/dev/null; then
@@ -106,10 +113,6 @@ jobs:
             sleep 1
           done
           curl -f http://localhost:8000/api/health
-        working-directory: ./backend
-        env:
-          PORT: 8000
-      - run: npm run build
-        working-directory: ./frontend
+      - run: pnpm --filter gopredict-frontend build
         env:
           VITE_API_URL: http://localhost:8000

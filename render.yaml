@@ -6,5 +6,5 @@ services:
     buildFilter:
       paths:
       - backend/**
-    buildCommand: "npm ci"
+    buildCommand: "pnpm install"
     startCommand: "node server.js"
