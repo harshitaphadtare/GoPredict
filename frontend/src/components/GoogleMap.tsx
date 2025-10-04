@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export type GeoPoint = {
@@ -111,7 +111,7 @@ export function GoogleMap({ from, to, animateKey, className }: GoogleMapProps) {
         directionsRendererRef.current.setDirections(result);
         
         // Add custom markers
-        const startMarker = new window.google.maps.Marker({
+        new window.google.maps.Marker({
           position: { lat: from.lat, lng: from.lon },
           map: mapInstanceRef.current,
           title: from.name || 'Start',
@@ -125,7 +125,7 @@ export function GoogleMap({ from, to, animateKey, className }: GoogleMapProps) {
           }
         });
 
-        const endMarker = new window.google.maps.Marker({
+        new window.google.maps.Marker({
           position: { lat: to.lat, lng: to.lon },
           map: mapInstanceRef.current,
           title: to.name || 'End',

@@ -1,7 +1,6 @@
-import React from 'react';
 import { Github, Rocket } from 'lucide-react';
 
-const Footer: React.FC = () => {
+const Footer = () => {
   return (
     <footer className="bg-slate-50 dark:bg-gray-800/50 border-t border-slate-200 dark:border-white/10 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
