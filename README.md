@@ -293,27 +293,27 @@ Typical model performance on validation set:
 ## 🔮 Future Enhancements
 
 - [ ] Automated feature selection
-- [ ] Ensemble methods
 - [ ] Real-time prediction API
 - [ ] Model monitoring dashboard
 - [ ] A/B testing framework
 
-## 📄 License
+  ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+  This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🤝 Contributing
+  ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+  Please read [CONTRIBUTING.md](CONTRIBUTING.md). By participating, you agree to abide by our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) and report vulnerabilities per [SECURITY.md](SECURITY.md).
 
-## 📞 Support
+  1. Fork the repository
+  2. Create a feature branch
+  3. Make your changes
+  4. Add tests if applicable
+  5. Submit a pull request
+
+  ## 📞 Support
 
 For questions or issues, please:
 
 1. Check the logs first
 2. Review this documentation
-3. Open an issue on GitHub

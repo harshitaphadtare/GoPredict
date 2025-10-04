@@ -79,7 +79,6 @@ dmypy.json
 
 # IDE
 .vscode/
-.idea/
 *.swp
 *.swo
 
@@ -91,3 +90,15 @@ Thumbs.db
 saved_models/
 data/processed/
 *.log
+
+# Node/JS (frontend & backend)
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.vite-temp/
+**/coverage/
+
+# Test environment files
+frontend/.env.test
+backend/.env.test
