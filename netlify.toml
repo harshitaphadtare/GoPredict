@@ -1,3 +1,6 @@
+[secrets]
+  omit_keys = ["VITE_API_URL", "VITE_GEOAPIFY_API_KEY"]
+
 [build.environment]
   NODE_VERSION = "20"
 
@@ -10,6 +13,3 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-[secrets]
-  omit_keys = ["VITE_API_URL", "VITE_GEOAPIFY_API_KEY"]
