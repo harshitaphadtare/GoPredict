@@ -102,6 +102,9 @@ jobs:
           node-version: "20.x"
           cache: "pnpm"
       - run: pnpm install
+      - name: Install backend dependencies
+        run: pnpm install
+        working-directory: backend
       - run: pnpm --filter gopredict-backend start &
         env:
           PORT: 8000
