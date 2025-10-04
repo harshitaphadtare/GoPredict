@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: gopredict-backend
+    env: node
+    rootDir: backend
+    buildFilter:
+      paths:
+      - backend/**
+    buildCommand: "npm ci"
+    startCommand: "node server.js"
