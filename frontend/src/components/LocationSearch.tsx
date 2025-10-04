@@ -63,7 +63,7 @@ export function LocationSearch({
 }: LocationSearchProps) {
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
