@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "node-cache": "^5.1.2"
+  }
+}

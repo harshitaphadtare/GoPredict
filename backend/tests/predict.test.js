@@ -1,7 +1,8 @@
 import request from 'supertest'
 import app from '../server.js'
+import { predictRoute, healthCheck } from '../routes/predict.js';
 
-describe('Predict API Endpoint', () => {
+describe('Prediction API', () => {
   describe('POST /api/predict', () => {
     const validRequest = {
       from: {

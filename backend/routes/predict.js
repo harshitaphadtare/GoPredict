@@ -1,3 +1,16 @@
+import NodeCache from 'node-cache';
+
+// Initialize cache with 30 minute TTL (time to live)
+const predictionCache = new NodeCache({ 
+  stdTTL: 1800,
+  checkperiod: 120
+});
+
+// Create cache key from request parameters
+function createCacheKey(from, to, startTime, city) {
+  return `${from.lat},${from.lon}|${to.lat},${to.lon}|${startTime}|${city}`;
+}
+
 // Simple distance-based prediction (replace with your ML model)
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth's radius in kilometers
@@ -45,7 +58,7 @@ function estimateTravelTime(distanceKm, startTime, city) {
   return Math.max(5, timeMinutes * (1 + variation));
 }
 
-export function predictRoute(req, res) {
+export const predictRoute = (req, res) => {
   try {
     const { from, to, startTime, city } = req.body;
     
@@ -63,6 +76,17 @@ export function predictRoute(req, res) {
         error: 'Invalid coordinates' 
       });
     }
+
+    // Check cache first
+    const cacheKey = createCacheKey(from, to, startTime, city);
+    const cachedResult = predictionCache.get(cacheKey);
+    
+    if (cachedResult) {
+      return res.json({
+        ...cachedResult,
+        cached: true
+      });
+    }
     
     // Calculate distance
     const distance = calculateDistance(from.lat, from.lon, to.lat, to.lon);
@@ -70,13 +94,23 @@ export function predictRoute(req, res) {
     // Estimate travel time
     const minutes = estimateTravelTime(distance, startTime, city);
     
-    // Return prediction
-    res.json({
-      minutes: Math.round(minutes * 10) / 10, // Round to 1 decimal place
-      confidence: 0.75 + Math.random() * 0.2, // Random confidence between 0.75-0.95
+    // Create prediction result
+    const prediction = {
+      minutes: Math.round(minutes * 10) / 10,
+      confidence: 0.75 + Math.random() * 0.2,
       model_version: 'v1.0-demo',
       distance_km: Math.round(distance * 10) / 10,
-      city: city
+      city: city,
+      timestamp: new Date().toISOString()
+    };
+
+    // Store in cache
+    predictionCache.set(cacheKey, prediction);
+    
+    // Return prediction
+    res.json({
+      ...prediction,
+      cached: false
     });
     
   } catch (error) {
@@ -88,11 +122,20 @@ export function predictRoute(req, res) {
   }
 }
 
-export function healthCheck(req, res) {
+// Add cache stats to health check
+export const healthCheck = (req, res) => {
+  const stats = predictionCache.getStats();
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: 'v1.0-demo',
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    cache: {
+      keys: predictionCache.keys().length,
+      hits: stats.hits,
+      misses: stats.misses,
+      ksize: stats.ksize,
+      vsize: stats.vsize
+    }
   });
 }
