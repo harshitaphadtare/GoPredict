@@ -13,17 +13,17 @@ Thanks for your interest in contributing! This guide will help you get started.
 ### Frontend
 ```bash
 cd frontend
-npm install
-npm run dev
-npm run test:run
+pnpm install
+pnpm run dev
+pnpm run test:run
 ```
 
 ### Backend
 ```bash
 cd backend
-npm install
-npm start
-npm test
+pnpm install
+pnpm start
+pnpm test
 ```
 
 ### Python ML (optional)
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 ## Testing
 - Frontend: Vitest + React Testing Library (`frontend/src/test/*`)
 - Backend: Jest + Supertest (`backend/tests/*`)
-- Ensure `npm run test:coverage` passes in both `frontend/` and `backend/`.
+- Ensure `pnpm run test:coverage` passes in both `frontend/` and `backend/`.
 
 ## Linting & Formatting
 - Use Prettier defaults (Vite + React).

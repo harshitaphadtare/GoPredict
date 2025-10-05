@@ -1,10 +1,7 @@
 export default {
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
-  testMatch: [
-    '**/__tests__/**/*.js',
-    '**/*.(test|spec).js'
-  ],
+  testMatch: ['**/*.test.js'],
   collectCoverageFrom: [
     'routes/**/*.js',
     'server.js',
@@ -13,7 +10,6 @@ export default {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   transform: {},
   testTimeout: 10000
 }
