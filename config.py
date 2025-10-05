@@ -5,6 +5,8 @@ This file contains all configuration settings for the GoPredict project.
 Modify these settings to customize the pipeline behavior.
 """
 
+from pathlib import Path
+
 # Data paths
 DATA_PATHS = {
     'raw_train': 'data/raw/train.csv',
@@ -22,6 +24,15 @@ OUTPUT_PATHS = {
     'logs': 'logs',
     'submissions': 'output',
     'figures': 'notebooks/figures'
+}
+
+# Cache Configuration
+CACHE_CONFIG = {
+    'enabled': True,
+    'cache_dir': 'cache/predictions',
+    'ttl_hours': 24,  # Cache expiration time in hours
+    'max_cache_size_mb': 100,  # Maximum cache size in megabytes
+    'clear_on_startup': False  # Whether to clear cache on program start
 }
 
 # Model configurations
@@ -109,3 +120,7 @@ FEATURE_COLUMNS = {
 
 # Target column
 TARGET_COLUMN = 'duration'
+
+# Create cache directory
+CACHE_DIR = Path('cache')
+CACHE_DIR.mkdir(exist_ok=True)

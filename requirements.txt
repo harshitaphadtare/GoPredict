@@ -32,3 +32,6 @@ ipykernel>=6.0.0
 
 # Utilities
 requests>=2.25.0
+
+# Caching
+pickle-mixin>=1.0.2

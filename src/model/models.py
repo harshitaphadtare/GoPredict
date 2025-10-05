@@ -18,12 +18,31 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.regularizers import l2
 
+# Import caching system
+try:
+    from src.cache.prediction_cache import PredictionCache, predict_with_cache
+    CACHE_AVAILABLE = True
+except ImportError:
+    CACHE_AVAILABLE = False
+    logging.warning("Cache module not available. Running without caching.")
+
 try:
     from tqdm import tqdm
 except ImportError:
     # Fallback if tqdm is not available
     def tqdm(iterable, desc=None):
         return iterable
+
+# Initialize global cache instance
+if CACHE_AVAILABLE:
+    prediction_cache = PredictionCache(
+        cache_dir="cache/predictions",
+        ttl_hours=24,  # Cache expires after 24 hours
+        max_cache_size_mb=100  # Maximum 100MB cache size
+    )
+else:
+    prediction_cache = None
+
 
 #Normalising X using MinMaxScaler 
 def normalize_features(X):
@@ -246,17 +265,18 @@ def run_regression_models(train_df,models_to_run=None):
 
 
 # ============================================================================
-# PREDICTION AND EVALUATION FUNCTIONS
+# PREDICTION AND EVALUATION FUNCTIONS WITH CACHING
 # ============================================================================
 
-def predict_duration(model, test_df, model_name="Model"):
+def predict_duration(model, test_df, model_name="Model", use_cache=False):
     """
-    Make predictions on test data
+    Make predictions on test data with optional caching
     
     Args:
         model: Trained model
         test_df: Test dataframe (without duration column)
         model_name: Name of the model for logging
+        use_cache: Whether to use caching (default: False for compatibility)
     
     Returns:
         numpy array: Predictions
@@ -298,12 +318,61 @@ def predict_duration(model, test_df, model_name="Model"):
     except Exception as align_err:
         logging.warning(f"Feature alignment skipped due to: {align_err}")
 
-    predictions = model.predict(X_test)
+    # Use caching if enabled and available
+    if use_cache and CACHE_AVAILABLE and prediction_cache is not None:
+        return predict_duration_with_cache(model, X_test, model_name)
+    else:
+        predictions = model.predict(X_test)
+        logging.info(f"{model_name} predictions completed!")
+        logging.info("-----")
+        return predictions
+
+
+def predict_duration_with_cache(model, test_df, model_name="Model"):
+    """
+    Make predictions with caching support.
     
-    logging.info(f"{model_name} predictions completed!")
+    Args:
+        model: Trained model
+        test_df: Test DataFrame with features
+        model_name: Name of the model for logging
+        
+    Returns:
+        Array of predictions
+    """
+    predictions = []
+    cache_hits = 0
+    cache_misses = 0
+    
+    for idx, row in test_df.iterrows():
+        # Create route parameter dict from row
+        route_params = row.to_dict()
+        
+        # Check cache first
+        cached_pred = prediction_cache.get(route_params)
+        
+        if cached_pred is not None:
+            predictions.append(cached_pred)
+            cache_hits += 1
+        else:
+            # Make prediction
+            pred = model.predict(pd.DataFrame([row]))[0]
+            predictions.append(float(pred))
+            
+            # Store in cache
+            prediction_cache.set(route_params, float(pred))
+            cache_misses += 1
+    
+    # Log cache statistics
+    stats = prediction_cache.get_stats()
+    logging.info(f"{model_name} predictions completed with caching!")
+    logging.info(f"Cache Performance - Hits: {cache_hits}, Misses: {cache_misses}")
+    logging.info(f"Overall Cache Stats - Hit Rate: {stats['hit_rate']}, "
+                f"Entries: {stats['cache_entries']}, "
+                f"Size: {stats['cache_size_mb']} MB")
     logging.info("-----")
     
-    return predictions
+    return np.array(predictions)
 
 
 def compare_predictions(pred_1, pred_2, title="Prediction 1 vs Prediction 2", save_plot=True):
@@ -437,7 +506,7 @@ def hyperparameter_tuning_xgb(train_df, test_size=0.2, random_state=1):
     
     logging.info(f"Training final model with best parameters...")
     xgb_final = XGBRegressor(
-        max_depth=best_max_depth, 
+        max_depth=best_max_depth,  
         learning_rate=best_learning_rate, 
         n_estimators=500, 
         reg_lambda=0.5
@@ -464,14 +533,12 @@ def hyperparameter_tuning_xgb(train_df, test_size=0.2, random_state=1):
     return xgb_final, best_params, final_rmse
 
 
-
-
 # ============================================================================
-# COMPLETE PIPELINE FUNCTION
+# COMPLETE PIPELINE FUNCTION WITH CACHING
 # ============================================================================
 
 def run_complete_pipeline(train_df, test_df, models_to_run=None, 
-                         tune_xgb=False, create_submission=True):
+                         tune_xgb=False, create_submission=True, use_cache=True):
     """
     Run the complete ML pipeline including training, evaluation, and submission
     
@@ -481,12 +548,18 @@ def run_complete_pipeline(train_df, test_df, models_to_run=None,
         models_to_run: List of models to train
         tune_xgb: Whether to perform hyperparameter tuning for XGBoost
         create_submission: Whether to create submission file
+        use_cache: Whether to use prediction caching (default: True)
     
     Returns:
         dict: Complete pipeline results
     """
     logging.info("Starting Complete ML Pipeline...")
     logging.info("=" * 60)
+    
+    if use_cache and CACHE_AVAILABLE:
+        logging.info("Caching is ENABLED for predictions")
+    else:
+        logging.info("Caching is DISABLED for predictions")
     
     # Step 1: Train models
     if tune_xgb and 'XGB' in (models_to_run or ['XGB']):
@@ -503,10 +576,10 @@ def run_complete_pipeline(train_df, test_df, models_to_run=None,
     else:
         models = run_regression_models(train_df, models_to_run)
     
-    # Step 2: Make predictions on test data
+    # Step 2: Make predictions on test data with optional caching
     predictions = {}
     for model_name, model in models.items():
-        pred = predict_duration(model, test_df, model_name)
+        pred = predict_duration(model, test_df, model_name, use_cache=use_cache)
         predictions[model_name] = pred
     
     # Step 3: Compare predictions (if multiple models)
@@ -527,15 +600,28 @@ def run_complete_pipeline(train_df, test_df, models_to_run=None,
             submission_file = to_submission(pred, f"output/{model_name.lower().replace(' ', '_')}")
             submission_files[model_name] = submission_file
     
-    # Step 5: Prepare results
+    # Step 5: Display final cache statistics
+    if use_cache and CACHE_AVAILABLE and prediction_cache is not None:
+        stats = prediction_cache.get_stats()
+        logging.info(f"\n{'='*60}")
+        logging.info(f"FINAL CACHE STATISTICS:")
+        logging.info(f"  Total Requests: {stats['total_requests']}")
+        logging.info(f"  Cache Hits: {stats['hits']}")
+        logging.info(f"  Cache Misses: {stats['misses']}")
+        logging.info(f"  Hit Rate: {stats['hit_rate']}")
+        logging.info(f"  Cache Entries: {stats['cache_entries']}")
+        logging.info(f"  Cache Size: {stats['cache_size_mb']} MB")
+        logging.info(f"{'='*60}\n")
+    
+    # Step 6: Prepare results
     results = {
         'models': models,
         'predictions': predictions,
-        'submission_files': submission_files
+        'submission_files': submission_files,
+        'cache_stats': prediction_cache.get_stats() if (use_cache and CACHE_AVAILABLE and prediction_cache) else None
     }
     
     logging.info("Complete ML Pipeline finished successfully!")
     logging.info("=" * 60)
     
     return results
-
