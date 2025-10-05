@@ -14,5 +14,8 @@
     "test": "npm run test -ws",
     "test:coverage": "npm run test:coverage -ws",
     "typecheck": "npm run typecheck -w frontend"
+  },
+  "dependencies": {
+    "node-cache": "^5.1.2"
   }
 }
