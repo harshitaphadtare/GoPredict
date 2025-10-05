@@ -38,10 +38,19 @@ app.get('/', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message
+  // Respect known status codes (e.g., body-parser JSON errors set status=400)
+  const status = err?.status || err?.statusCode || (err?.type === 'entity.parse.failed' ? 400 : 500);
+  const isServerError = status >= 500;
+  const errorName = isServerError ? 'Internal Server Error' : 'Bad Request';
+
+  // Avoid noisy logs during tests
+  if (process.env.NODE_ENV !== 'test') {
+    console.error('Error:', err);
+  }
+
+  res.status(status).json({
+    error: errorName,
+    message: err?.message || errorName
   });
 });
 
@@ -53,11 +62,13 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 GoPredict API Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🔮 Prediction endpoint: http://localhost:${PORT}/api/predict`);
-});
+// Start server only if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 GoPredict API Server running on port ${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`🔮 Prediction endpoint: http://localhost:${PORT}/api/predict`);
+  });
+}
 
 export default app;

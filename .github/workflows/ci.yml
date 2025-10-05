@@ -1,0 +1,7 @@
+name: Disabled CI (use test.yml)
+on: { workflow_dispatch: {} }
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This workflow is intentionally disabled. Use .github/workflows/test.yml instead."

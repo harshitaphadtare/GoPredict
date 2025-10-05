@@ -1,0 +1,13 @@
+[build.environment]
+NODE_VERSION = "20"
+SECRETS_SCAN_OMIT_KEYS = "VITE_API_URL,VITE_GEOAPIFY_API_KEY"
+
+[build]
+base = "frontend"
+command = "pnpm install && pnpm run build"
+publish = "dist"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
