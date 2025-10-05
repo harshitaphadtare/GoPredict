@@ -1,10 +1,4 @@
 {
-  "dependencies": {
-    "node-cache": "^5.1.2"
-  }
-}
-
-{
   "name": "gopredict",
   "private": true,
   "version": "1.0.0",
@@ -20,5 +14,8 @@
     "test": "npm run test -ws",
     "test:coverage": "npm run test:coverage -ws",
     "typecheck": "npm run typecheck -w frontend"
+  },
+  "dependencies": {
+    "node-cache": "^5.1.2"
   }
 }
