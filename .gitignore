@@ -1,4 +1,5 @@
-notebooks/gmaps/
+# Dependencies
+node_modules/
 
 # Environment variables
 .env
@@ -17,7 +18,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-/lib/
+lib/
+!frontend/src/lib/
 lib64/
 parts/
 sdist/
@@ -26,30 +28,9 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
 # Jupyter Notebook
 .ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
 
 # Environments
 .venv
@@ -58,24 +39,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
 
 # IDE
 .vscode/
@@ -86,19 +49,17 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
-# Project specific
-saved_models/
-data/processed/
-*.log
-
-# Node/JS (frontend & backend)
-frontend/node_modules/
-backend/node_modules/
+# Build outputs
 frontend/dist/
 frontend/.vite/
 frontend/.vite-temp/
+
+# Coverage reports
 **/coverage/
 
-# Test environment files
-frontend/.env.test
-backend/.env.test
+# Logs
+*.log
+
+# Project specific
+notebooks/gmaps/
+data/processed/
