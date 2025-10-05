@@ -16,6 +16,8 @@
     "typecheck": "npm run typecheck -w frontend"
   },
   "dependencies": {
+    "axios": "^1.12.2",
+    "leaflet": "^1.9.4",
     "node-cache": "^5.1.2"
   }
 }

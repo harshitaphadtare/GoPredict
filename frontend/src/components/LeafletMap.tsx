@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import axios from 'axios'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -56,6 +57,7 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
 
     let markers: L.Marker[] = []
     let routeLayer: L.Polyline | L.GeoJSON | null = null
+  let debugControl: L.Control | null = null
 
     const fitBoundsIfNeeded = () => {
       const points: L.LatLngExpression[] = []
@@ -88,39 +90,172 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
       }
     }
 
+    const addDebugControl = () => {
+      // create a small control in top-right that shows provider / errors
+      const ctrl = (L.control as any)({ position: 'topright' })
+      ctrl.onAdd = function () {
+        const el = L.DomUtil.create('div', 'route-debug-badge') as HTMLDivElement
+        el.style.padding = '6px 8px'
+        el.style.background = 'rgba(0,0,0,0.65)'
+        el.style.color = 'white'
+        el.style.fontSize = '12px'
+        el.style.borderRadius = '6px'
+        el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)'
+        el.innerText = 'Route: none'
+        return el
+      }
+      ctrl.addTo(map)
+      debugControl = ctrl
+    }
+
+    const setDebugText = (text: string) => {
+      try {
+        if (debugControl) {
+          const c = (debugControl as any).getContainer?.() || (debugControl as any)._container
+          if (c) c.innerText = text
+        }
+      } catch (err) {
+        // Ignore debug UI errors
+        console.debug('setDebugText error', err)
+      }
+    }
+
     const drawStraight = () => {
-      if (!from || !to) return
       if (routeLayer) routeLayer.remove()
-      routeLayer = L.polyline(
-        [
-          [from.lat, from.lon],
-          [to.lat, to.lon],
-        ],
-        { color: '#2563eb', weight: 3, opacity: 0.85 }
-      ).addTo(map)
+      if (from && to) {
+        const straight = L.polyline(
+          [
+            [from.lat, from.lon],
+            [to.lat, to.lon],
+          ],
+          { color: '#2563eb', weight: 3, opacity: 0.85 }
+        ).addTo(map)
+        routeLayer = straight
+      }
     }
 
     const fetchRoute = async () => {
       if (!from || !to) return
-      const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY
-      if (!apiKey) {
-        drawStraight()
-        return
-      }
-      
-      try {
-        const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lon},${from.lat}|${to.lon},${to.lat}&mode=drive&format=geojson&apiKey=${apiKey}`
-        const res = await fetch(url)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data = await res.json()
-        
-        if (!data?.features?.[0]) throw new Error('No route')
-        
+
+      const orsKey = import.meta.env.VITE_ORS_API_KEY
+      const geoKey = import.meta.env.VITE_GEOAPIFY_API_KEY
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+      const drawFeatures = (features: any) => {
+        const coords = features[0].geometry.coordinates.map((c: [number, number]) => [c[1], c[0]])
         if (routeLayer) routeLayer.remove()
-        routeLayer = L.geoJSON(data.features[0], {
-          style: { color: '#2563eb', weight: 4, opacity: 0.95 },
-        }).addTo(map)
-      } catch {
+        const route = L.polyline(coords, { color: '#2563eb', weight: 4, opacity: 0.95 }).addTo(map)
+        routeLayer = route
+        map.fitBounds(route.getBounds().pad ? route.getBounds().pad(0.15) : route.getBounds())
+      }
+
+      try {
+        // 1) Try ORS client-side, fall back to server proxy
+        if (orsKey) {
+          const url = `https://api.openrouteservice.org/v2/directions/driving-car?start=${from.lon},${from.lat}&end=${to.lon},${to.lat}`
+          setDebugText('Route: ORS (fetching...)')
+          try {
+            const res = await axios.get(url, { headers: { Authorization: orsKey } })
+            if (res.data?.features?.[0]) {
+              drawFeatures(res.data.features)
+              setDebugText(`Route: ORS (${res.data.features[0].geometry.coordinates.length} pts)`)
+              return
+            }
+          } catch (e) {
+            console.debug('LeafletMap: ORS client request failed, will try proxy', e)
+            setDebugText('Route: ORS (proxying...)')
+            // fallthrough to proxy below
+          }
+        }
+
+        // 2) Try Geoapify client-side (if configured)
+        if (geoKey) {
+          const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lon},${from.lat}|${to.lon},${to.lat}&mode=drive&format=geojson&apiKey=${geoKey}`
+          setDebugText('Route: Geoapify (fetching...)')
+          try {
+            const res = await axios.get(url)
+            if (res.data?.features?.[0]) {
+              routeLayer && routeLayer.remove()
+              routeLayer = L.geoJSON(res.data.features[0], { style: { color: '#2563eb', weight: 4, opacity: 0.95 } }).addTo(map)
+              map.fitBounds((routeLayer as any).getBounds().pad ? (routeLayer as any).getBounds().pad(0.15) : (routeLayer as any).getBounds())
+              setDebugText('Route: Geoapify (done)')
+              return
+            }
+          } catch (e) {
+            console.debug('LeafletMap: Geoapify client request failed, will try proxy', e)
+            setDebugText('Route: Geoapify (proxying...)')
+          }
+        }
+
+        // 3) Try server proxy directly
+        setDebugText('Route: server (fetching...)')
+        try {
+          const res = await axios.post(`${API_BASE_URL}/api/routing`, { from, to })
+          if (res.data?.features?.[0]) {
+            drawFeatures(res.data.features)
+            setDebugText('Route: server (done)')
+            return
+          }
+        } catch (err) {
+          const upstreamCode = (err as any)?.response?.data?.error?.code ?? (err as any)?.response?.status
+          // ORS returns 2010 for non-routable points; this is expected and will be retried via nudging.
+          // Avoid noisy console.error for that specific case.
+          if (upstreamCode !== 2010 && upstreamCode !== 404) {
+            console.debug('LeafletMap: server proxy returned error', err)
+          }
+          // If ORS returned non-routable error, attempt nudging the destination
+          if (upstreamCode === 2010 || upstreamCode === 404) {
+            setDebugText('Route: server (nudging dest)')
+
+            const metersToDegrees = (meters: number, lat: number) => {
+              const dLat = meters / 111111
+              const dLon = meters / (111111 * Math.cos((lat * Math.PI) / 180))
+              return { dLat, dLon }
+            }
+
+            const tryNudges = async () => {
+              const radii = [50, 150, 300]
+              const angles = Array.from({ length: 8 }, (_, i) => (i * Math.PI) / 4)
+              for (const r of radii) {
+                const { dLat, dLon } = metersToDegrees(r, to.lat)
+                for (const a of angles) {
+                  const nx = to.lon + Math.cos(a) * dLon
+                  const ny = to.lat + Math.sin(a) * dLat
+                  try {
+                    const res2 = await axios.post(`${API_BASE_URL}/api/routing`, { from, to: { ...to, lon: nx, lat: ny } })
+                    if (res2.data?.features?.[0]) return { features: res2.data.features, nudged: { lon: nx, lat: ny } }
+                  } catch (_) {
+                    await new Promise(r => setTimeout(r, 150))
+                    continue
+                  }
+                }
+              }
+              return null
+            }
+
+            try {
+              const nudged = await tryNudges()
+              if (nudged && nudged.features && nudged.features[0]) {
+                drawFeatures(nudged.features)
+                setDebugText('Route: server (nudged)')
+                return
+              }
+            } catch (inner) {
+              console.debug('LeafletMap: nudging attempts failed', inner)
+            }
+          }
+          // rethrow to outer catch
+          throw err
+        }
+
+        // Nothing worked: fall back to straight line
+        console.debug('LeafletMap: no ORS or Geoapify route available, using straight-line fallback')
+        setDebugText('Route: none (no key)')
+        drawStraight()
+      } catch (err) {
+        console.error('Routing error:', err)
+        try { alert('Unable to fetch driving route (routing service failed). Showing straight-line fallback.') } catch {}
+        setDebugText('Route: error')
         drawStraight()
       }
     }
@@ -128,6 +263,7 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
     drawMarkers()
     fitBoundsIfNeeded()
     // Always draw something quickly, then try to replace with routed geometry
+    addDebugControl()
     if (from && to) {
       drawStraight()
       fetchRoute()

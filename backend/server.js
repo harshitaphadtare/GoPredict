@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { predictRoute, healthCheck } from './routes/predict.js';
+import routingRouter from './routes/routing.js'
 
 // Load environment variables
 dotenv.config();
@@ -21,18 +22,19 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', healthCheck);
 app.get('/api/status', healthCheck);
 app.post('/api/predict', predictRoute);
+app.use('/api/routing', routingRouter)
+
+// Safe config check (does NOT return keys) - useful for local debugging
+app.get('/api/config', (req, res) => {
+  res.json({ hasORSKey: !!process.env.ORS_API_KEY })
+})
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
     message: 'GoPredict API Server',
     version: '1.0.0',
-    status: 'running',
-    endpoints: {
-      health: '/api/health',
-      predict: '/api/predict',
-      status: '/api/status'
-    }
+// Request logging removed: was used only for local debugging
   });
 });
 
