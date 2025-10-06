@@ -24,14 +24,16 @@ router.post('/', async (req, res, next) => {
       // ORS returns 404 + code 2010 for non-routable coordinates (expected for some centroids).
       // Log those at debug level to avoid noisy server error logs during normal retry/nudge flow.
       if (status === 404 && upstreamCode === 2010) {
-        // Non-routable points (ORS code 2010) are expected for some coordinates
-        // Silence by default; enable with SHOW_ROUTING_DEBUG=1 in env to see full upstream body
+        // Non-routable points (ORS code 2010) are expected for some coordinates.
+        // Forward the upstream `error` object exactly as the test expects.
         if (process.env.SHOW_ROUTING_DEBUG === '1') {
           console.debug('Routing proxy upstream non-routable (2010):', err?.response?.data)
         }
-      } else {
-        console.error('Routing proxy upstream error:', status, err?.response?.data)
+        return res.status(404).json({ error: err.response.data.error })
       }
+
+      // Log other upstream errors and proxy the full upstream body/status
+      console.error('Routing proxy upstream error:', status, err?.response?.data)
       if (err?.response) {
         return res.status(err.response.status).json(err.response.data)
       }
