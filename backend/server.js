@@ -34,7 +34,12 @@ app.get('/', (req, res) => {
   res.json({
     message: 'GoPredict API Server',
     version: '1.0.0',
-// Request logging removed: was used only for local debugging
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      predict: '/api/predict',
+      status: '/api/status'
+    }
   });
 });
 
