@@ -10,12 +10,18 @@ router.post('/', async (req, res, next) => {
     const { from, to } = req.body
     if (!from || !to) return res.status(400).json({ error: 'Missing from/to in body' })
 
+    // Basic validation: ensure lat and lon are present and numeric
+    const isValidCoord = (c) => c && typeof c.lat !== 'undefined' && typeof c.lon !== 'undefined' && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lon))
+    if (!isValidCoord(from) || !isValidCoord(to)) {
+      return res.status(400).json({ error: 'Invalid from/to coordinates. Expect { lat: number, lon: number }' })
+    }
+
     const orsKey = process.env.ORS_API_KEY
     if (!orsKey) return res.status(500).json({ error: 'Routing key not configured on server' })
 
     const url = `https://api.openrouteservice.org/v2/directions/driving-car?start=${from.lon},${from.lat}&end=${to.lon},${to.lat}`
     try {
-      const resp = await axios.get(url, { headers: { Authorization: orsKey } })
+  const resp = await axios.get(url, { headers: { Authorization: orsKey }, timeout: 10000 })
       return res.json(resp.data)
     } catch (err) {
       // Log upstream error for local debugging and proxy the upstream error body/status
