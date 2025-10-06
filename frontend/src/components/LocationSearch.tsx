@@ -71,17 +71,27 @@ export function LocationSearch({
 
   // Filter locations based on search input
   useEffect(() => {
+    if (!value.trim()) {
+      setSearchResults([]);
+      setIsOpen(false);
+      return;
+    }
+
+    // If the input exactly matches the selected location's name, keep the dropdown closed
+    if (selectedLocation && value.trim() === selectedLocation.name) {
+      setSearchResults([]);
+      setIsOpen(false);
+      return;
+    }
+
     if (value.trim()) {
       const filtered = locations.filter(location =>
         location.name.toLowerCase().includes(value.toLowerCase())
       );
       setSearchResults(filtered);
       setIsOpen(filtered.length > 0);
-    } else {
-      setSearchResults([]);
-      setIsOpen(false);
     }
-  }, [value, locations]);
+  }, [value, locations,  selectedLocation]);
 
   // Handle location selection
   const handleLocationSelect = (location: Location) => {

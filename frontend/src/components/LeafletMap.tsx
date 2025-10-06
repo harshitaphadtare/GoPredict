@@ -5,20 +5,28 @@ import 'leaflet/dist/leaflet.css'
 // Fix for default markers not showing in bundled environments
 delete (L.Icon.Default.prototype as any)._getIconUrl
 
-// Create custom colored markers
+// Create a more beautiful, custom pin-style icon using SVG
 const createCustomIcon = (color: string) => {
+  // SVG for a classic map pin with enhanced styling
+  const markerHtml = `
+    <svg viewBox="0 0 32 48" width="32" height="48" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+      {/* The main pin shape with a white border for better contrast */}
+      <path
+        fill="${color}"
+        stroke="#FFFFFF"
+        stroke-width="2"
+        d="M16 2 C9.925 2 5 6.925 5 13 c0 7.875 11 23 11 23 s11 -15.125 11 -23 C27 6.925 22.075 2 16 2z"
+      />
+      {/* A white inner circle for a polished look */}
+      <circle cx="16" cy="13" r="5" fill="#FFFFFF" />
+    </svg>`
+
   return L.divIcon({
-    className: 'custom-marker',
-    html: `<div style="
-      background-color: ${color};
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    className: 'leaflet-custom-icon',
+    html: markerHtml,
+    iconSize: [32, 48], // Size of the icon
+    iconAnchor: [16, 48], // Point of the icon which will correspond to marker's location
+    popupAnchor: [0, -48], // Point from which the popup should open relative to the iconAnchor
   })
 }
 
@@ -74,14 +82,14 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
       markers = []
       if (from) {
         const startMarker = L.marker([from.lat, from.lon], {
-          icon: createCustomIcon('#10b981') // Green for start
+          icon: createCustomIcon('#2563eb'), // Blue pin for start
         }).addTo(map)
         startMarker.bindPopup(`<b>Start:</b> ${from.name || 'Start Location'}`)
         markers.push(startMarker)
       }
       if (to) {
         const endMarker = L.marker([to.lat, to.lon], {
-          icon: createCustomIcon('#ef4444') // Red for end
+          icon: createCustomIcon('#ef4444'), // Red pin for end
         }).addTo(map)
         endMarker.bindPopup(`<b>End:</b> ${to.name || 'End Location'}`)
         markers.push(endMarker)
@@ -156,5 +164,3 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
     </div>
   )
 }
-
-
