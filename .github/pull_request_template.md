@@ -4,14 +4,14 @@
 Closes #
 
 ### 🔄 Type of Change
-- [ ] 🎨 Frontend (UI/UX changes)
-- [ ] ⚙️ Backend (API, database, logic)
-- [ ] 🧠 Python ML (Models, scripts, data processing)
-- [ ] 📚 Documentation
-- [ ] 🏗️ CI / Infrastructure (Workflows, deployment)
-- [ ] 🐛 Bug Fix (a non-breaking change that fixes an issue)
-- [ ] ✨ New Feature (a non-breaking change that adds functionality)
-- [ ] 💥 Breaking Change (a change that would cause existing functionality to not work as expected)
+- [ ] Frontend (UI/UX changes)
+- [ ] Backend (API, database, logic)
+- [ ] Python ML (Models, scripts, data processing)
+- [ ] Documentation
+- [ ] CI / Infrastructure (Workflows, deployment)
+- [ ] Bug Fix (a non-breaking change that fixes an issue)
+- [ ] New Feature (a non-breaking change that adds functionality)
+- [ ] Breaking Change (a change that would cause existing functionality to not work as expected)
 
 ### ✅ Checklist
 - [ ] I have linked this PR to the relevant issue.
@@ -25,5 +25,6 @@ Closes #
 
 
 ### 📸 Screenshots (if applicable)
+Give before n after preview
 
 ### 💬 Notes for Reviewers
