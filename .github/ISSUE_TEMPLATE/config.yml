@@ -16,3 +16,9 @@ templates:
   - name: "Documentation Update"
     about: "Use this template to request a documentation update"
     file: documentation_update.md
+  - name: "Pull Request"
+    about: "Use this template for submitting a pull request"
+    file: pull_request.md
+  - name: "Proposed Improvements"
+    about: "Use this template for proposing improvements"
+    file: proposed_improvements.md
