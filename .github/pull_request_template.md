@@ -1,21 +1,29 @@
-## Summary
-Explain the motivation and context for this change.
+## 📝 Description
 
-## Changes
-- [ ] Frontend
-- [ ] Backend
-- [ ] Python ML
-- [ ] Docs
-- [ ] CI / Infra
+### 🔗 Related Issue
+Closes #
 
-## Checklist
-- [ ] I opened an issue and linked it (or this is a small tweak)
-- [ ] I added/updated tests
-- [ ] `frontend`: `npm run test:run` passes
-- [ ] `backend`: `npm test` passes
-- [ ] CI passes on this PR
-- [ ] Docs updated (README/CONTRIBUTING as needed)
+### 🔄 Type of Change
+- [ ] 🎨 Frontend (UI/UX changes)
+- [ ] ⚙️ Backend (API, database, logic)
+- [ ] 🧠 Python ML (Models, scripts, data processing)
+- [ ] 📚 Documentation
+- [ ] 🏗️ CI / Infrastructure (Workflows, deployment)
+- [ ] 🐛 Bug Fix (a non-breaking change that fixes an issue)
+- [ ] ✨ New Feature (a non-breaking change that adds functionality)
+- [ ] 💥 Breaking Change (a change that would cause existing functionality to not work as expected)
 
-## Screenshots (if UI)
+### ✅ Checklist
+- [ ] I have linked this PR to the relevant issue.
+- [ ] I have performed a self-review of my own code.
+- [ ] My code follows the project's style guidelines.
+- [ ] I have added or updated tests that prove my fix is effective or that my feature works.
+- [ ] `frontend`: `npm run test:run` passes locally.
+- [ ] `backend`: `npm test` passes locally.
+- [ ] I have made corresponding changes to the documentation (if applicable).
+- [ ] All new and existing tests passed.
 
-## Notes for reviewers
+
+### 📸 Screenshots (if applicable)
+
+### 💬 Notes for Reviewers
