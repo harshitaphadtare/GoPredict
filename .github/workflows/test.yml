@@ -10,6 +10,8 @@ jobs:
   frontend-tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     defaults:
       run:
         working-directory: ./frontend
@@ -31,8 +33,10 @@ jobs:
       - run: pnpm run typecheck
       - run: pnpm run test:run
       - run: pnpm run test:coverage
-      - uses: codecov/codecov-action@v4
+      - name: Upload frontend coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
+          token: ${{ env.CODECOV_TOKEN }}
           file: ./frontend/coverage/lcov.info
           flags: frontend
           name: frontend-coverage
@@ -41,6 +45,8 @@ jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     defaults:
       run:
         working-directory: ./backend
@@ -61,8 +67,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm run test:coverage
-      - uses: codecov/codecov-action@v4
+      - name: Upload backend coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
+          token: ${{ env.CODECOV_TOKEN }}
           file: ./backend/coverage/lcov.info
           flags: backend
           name: backend-coverage
@@ -77,6 +85,8 @@ jobs:
         with:
           python-version: "3.9"
           cache: "pip"
+      - name: Install coverage for Python
+        run: pip install coverage
       - run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
