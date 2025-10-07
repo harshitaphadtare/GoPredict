@@ -13,7 +13,7 @@
     "build": "npm run build -ws",
     "test": "npm run test -ws",
     "test:coverage": "npm run test:coverage -ws",
-    "typecheck": "npm run typecheck -w frontend"
+    "typecheck": "pnpm --filter ./frontend run typecheck"
   },
   "dependencies": {
     "node-cache": "^5.1.2"

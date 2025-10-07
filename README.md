@@ -33,29 +33,6 @@ GoPredict/
 │   │   ├── distance.py            # Distance calculations
 │   │   ├── geolocation.py         # Geographic features
 │   │   ├── gmaps.py               # Google Maps integration
-│   │   ├── precipitation.py       # Weather features
-│   │   └── time.py                # Time-based features
-│   ├── feature_pipe.py            # Feature engineering pipeline
-│   ├── data_preprocessing.py      # Data preprocessing
-│   └── complete_pipeline_example.py # Usage examples
-│
-├── notebooks/                      # Jupyter notebooks
-│   ├── 01_EDA.ipynb               # Exploratory Data Analysis
-│   ├── 02_Feature_Engineering.ipynb # Feature engineering
-│   ├── 03_Model_Training.ipynb    # Model training
-│   ├── figures/                   # Generated plots
-│   └── gmaps/                     # Interactive maps
-│
-├── saved_models/                   # Trained models (auto-created)
-├── output/                         # Predictions and submissions (auto-created)
-└── logs/                          # Log files (auto-created)
-```
-
-## 🚀 Quick Start
-
-### 1. Installation
-
-```bash
 # Clone the repository
 git clone <your-repo-url>
 cd GoPredict
