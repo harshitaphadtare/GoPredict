@@ -1,5 +1,5 @@
 ---
-name: "📘 Documentation Update"
+name: "Documentation Update"
 about: "Use this template to suggest documentation improvements"
 title: "[DOCS]: "
 labels: ["documentation"]
