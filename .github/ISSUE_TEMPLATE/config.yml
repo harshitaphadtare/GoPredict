@@ -3,22 +3,28 @@ contact_links:
   - name: "Support"
     url: https://github.com/GoPredict/support
     about: "If you're facing any issues, please contact us here!"
+
 templates:
   - name: "Bug Report"
     about: "Use this template to report a bug"
+    title: "[BUG] "
+    labels: ["bug"]
     file: bug_report.md
+
   - name: "Feature Request"
     about: "Use this template to request a new feature"
+    title: "[FEATURE] "
+    labels: ["enhancement"]
     file: feature_request.md
+
   - name: "Style Enhancement"
     about: "Use this template to suggest UI style changes"
+    title: "[STYLE] "
+    labels: ["ui"]
     file: style_enhancement.md
+
   - name: "Documentation Update"
     about: "Use this template to request a documentation update"
+    title: "[DOCS] "
+    labels: ["documentation"]
     file: documentation_update.md
-  - name: "Pull Request"
-    about: "Use this template for submitting a pull request"
-    file: pull_request.md
-  - name: "Proposed Improvements"
-    about: "Use this template for proposing improvements"
-    file: proposed_improvements.md
