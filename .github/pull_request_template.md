@@ -1,9 +1,9 @@
-## 📝 Description
+##  Description
 
-### 🔗 Related Issue
+###  Related Issue
 Closes #
 
-### 🔄 Type of Change
+###  Type of Change
 - [ ] Frontend (UI/UX changes)
 - [ ] Backend (API, database, logic)
 - [ ] Python ML (Models, scripts, data processing)
@@ -13,7 +13,7 @@ Closes #
 - [ ] New Feature (a non-breaking change that adds functionality)
 - [ ] Breaking Change (a change that would cause existing functionality to not work as expected)
 
-### ✅ Checklist
+###  Checklist
 - [ ] I have linked this PR to the relevant issue.
 - [ ] I have performed a self-review of my own code.
 - [ ] My code follows the project's style guidelines.
@@ -24,7 +24,7 @@ Closes #
 - [ ] All new and existing tests passed.
 
 
-### 📸 Screenshots (if applicable)
+###  Screenshots (if applicable)
 Give before n after preview
 
-### 💬 Notes for Reviewers
+###  Notes for Reviewers
