@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { predictRoute, healthCheck } from './routes/predict.js';
+import routingRouter from './routes/routing.js';
 
 // Load environment variables
 dotenv.config();
@@ -18,9 +19,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+
 app.get('/api/health', healthCheck);
 app.get('/api/status', healthCheck);
 app.post('/api/predict', predictRoute);
+app.use('/api/routing', routingRouter);
 
 // Root endpoint
 app.get('/', (req, res) => {
