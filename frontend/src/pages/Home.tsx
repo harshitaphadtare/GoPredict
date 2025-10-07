@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LocationSearch } from "@/components/LocationSearch";
 import LeafletMap from "@/components/LeafletMap";
 import { Button } from "@/components/ui/button";
@@ -118,6 +118,19 @@ export default function Home() {
     setIsLoading(false);
   };
 
+  const resultRef = useRef<HTMLDivElement | null>(null);
+
+   useEffect(() => {
+    if (animKey > 0 && window.innerWidth <= 768) {
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 150);
+    }
+  }, [animKey]);
+
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
       {/* Background Pattern */}
@@ -151,7 +164,10 @@ export default function Home() {
           {/* Left Column - Results and Map */}
           <div className="flex flex-col gap-4">
             {/* Prediction Result - always visible */}
-            <div className="rounded-2xl border border-border bg-card/90 p-6 shadow-soft backdrop-blur">
+            <div 
+              ref={resultRef}
+              id="prediction-result"
+              className="rounded-2xl border border-border bg-card/90 p-6 shadow-soft backdrop-blur">
               <div className="flex items-center gap-3">
                 <Clock className="h-6 w-6 text-primary" />
                 <div>
