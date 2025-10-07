@@ -10,6 +10,9 @@ jobs:
   frontend-tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
     strategy:
       matrix:
         node-version: [18.x, 20.x]
@@ -24,8 +27,8 @@ jobs:
           cache: "pnpm"
       - run: pnpm install
       - run: pnpm run typecheck
-      - run: pnpm --filter ./frontend run test:run
-      - run: pnpm --filter ./frontend run test:coverage
+      - run: pnpm run test:run
+      - run: pnpm run test:coverage
       - uses: codecov/codecov-action@v4
         with:
           file: ./frontend/coverage/lcov.info
@@ -99,7 +102,10 @@ jobs:
           node-version: "20.x"
           cache: "pnpm"
       - run: pnpm install
-      - run: pnpm --filter ./backend start &
+      - name: Install backend dependencies
+        run: pnpm install
+        working-directory: backend
+      - run: pnpm --filter gopredict-backend start &
         env:
           PORT: 8000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -113,6 +119,9 @@ jobs:
             sleep 1
           done
           curl -f http://localhost:8000/api/health
-      - run: pnpm --filter ./frontend build
+      - name: Install frontend dependencies
+        run: pnpm install
+        working-directory: frontend
+      - run: pnpm --filter gopredict-frontend build
         env:
           VITE_API_URL: http://localhost:8000
