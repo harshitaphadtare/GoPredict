@@ -185,7 +185,7 @@ export default function Home() {
           </div>
 
           {/* Right Column - Input Form */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card/90 p-4 shadow-soft backdrop-blur">
+          <div className="flex min-w-0 flex-col gap-3 rounded-2xl border border-border bg-card/90 p-4 shadow-soft backdrop-blur">
             <h2 className="text-lg font-semibold mb-2">Plan Your Trip</h2>
             
             <LocationSearch
@@ -247,8 +247,19 @@ export default function Home() {
                 type="datetime-local"
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground shadow-soft outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-              />
+                className="flex-grow rounded-lg border border-border bg-background px-3 py-3 
+                              text-base text-foreground shadow-soft outline-none transition
+                              focus:border-primary focus:ring-2 focus:ring-primary/30
+                              sm:text-sm sm:py-2 sm:px-3
+                              [appearance:textfield] [color-scheme:light_dark]"
+                    style={{
+                      WebkitAppearance: "none",
+                      MozAppearance: "textfield",
+                      fontSize: "16px", 
+                      minHeight: "48px",
+                      width: "100%",
+                    }}
+                />
             </div>
             
             <Button
@@ -263,15 +274,17 @@ export default function Home() {
             <div className="mt-4 rounded-lg bg-muted/50 p-3">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span>
-                  Currently showing locations for: <strong>{currentCity === 'new_york' ? 'New York City' : 'San Francisco'}</strong>
-                </span>
+                    <div className="flex flex-col"> 
+                      <span>Currently showing locations for:</span>
+                      <strong className="text-foreground">
+                        {currentCity === 'new_york' ? 'New York City' : 'San Francisco'}
+                      </strong>
+                    </div>
               </div>
             </div>
           </div>
         </div>
       </main>
-
       {/* Footer */}
       <Footer />
     </div>
