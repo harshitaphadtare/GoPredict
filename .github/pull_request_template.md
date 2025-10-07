@@ -1,55 +1,25 @@
-##  Summary
-##  Problem & Motivation
-Fixes: #
+
+##  Description
+Fixes: #issue_number
 
 
-##  What Changed
-### Frontend
-- **`src/components/FileName.tsx`**:
-    - Implemented...
-    - Changed...
+## Changes Made
+<!-- Bullet-point summary of your changes -->
+- Added: [Description]
+- Fixed: [Description]
+- Updated: [Description]
 
-### Backend
-- **`src/routes/api/endpoint.js`**:
-    - Added a new proxy for...
-    - Modified the response to...
-
+## Testing
+<!-- How did you verify your changes? -->
+- [ ] Ran unit tests (`pnpm test`)
+- [ ] Tested manually (describe below):
+  - Test case 1: [Steps + Expected Result]
+  - Test case 2: [Steps + Expected Result]
 
 ##  Screenshots
 ### Before
 ### After
-##  How to Test
-### Local Setup
-1. **Backend:**
-   ```bash
-   cd backend
-   npm install
-   ```
-   Create a `.env` file in the `backend` directory with the following variables:
-   ```env
-   # Description of what this key is for
-   API_KEY_NAME=your_key_here
-   ```
 
-2. **Frontend:**
-   ```bash
-   cd frontend
-   pnpm install
-   ```
-   Create a `.env` file in the `frontend` directory if needed:
-   ```env
-   VITE_API_URL=http://localhost:8000
-   ```
-
-### Manual Testing Steps
-1. Navigate to the page/feature (e.g., `/dashboard`).
-2. Perform a specific action (e.g., "Run a prediction from A to B").
-3. **Expected Behavior:** Describe what should happen (e.g., "The map should update with a road-following polyline.").
-4. Check the browser's **Network Tab** for API calls (e.g., "Look for a `POST` to `/api/routing` with a `200` status").
-5. Check the **Backend Console** for logs.
-
-
-##  Notes for Reviewers
 ##  Checklist
 - [ ] My code follows the project's coding standards.
 - [ ] I have performed a self-review of my own code.
