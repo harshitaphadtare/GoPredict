@@ -4,7 +4,7 @@ import LeafletMap from "@/components/LeafletMap";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
-import { Clock, MapPin, Car } from "lucide-react";
+import { Clock, MapPin, Car, AlertTriangle } from "lucide-react";
 import Footer from "@/components/Footer";
 
 type Location = {
@@ -238,7 +238,8 @@ export default function Home() {
 
             {/* Warning Message */}
             {warning && (
-              <div className="mb-2 rounded bg-red-900/30 text-red-300 px-3 py-2 text-sm font-medium border border-red-800">
+              <div className="mb-2 flex items-center gap-2 rounded bg-red-900/30 text-red-300 px-3 py-2 text-sm font-medium border border-red-800">
+                <AlertTriangle className="h-4 w-4 text-red-400" />
                 {warning}
               </div>
             )}
