@@ -242,13 +242,21 @@ export default function Home() {
               <label htmlFor="start_time" className="mb-2 block text-sm font-medium text-foreground/80">
                 Date & Time of Travel
               </label>
-              <input
+              <div className="relative">
+                {!dateStr && (
+                  <span className="ios-only pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/50">
+                    dd-mm-yyyy --:-- 📅
+                  </span>
+                )}
+                <input
                 id="start_time"
                 type="datetime-local"
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground shadow-soft outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
               />
+              </div>
+              
             </div>
             
             <Button

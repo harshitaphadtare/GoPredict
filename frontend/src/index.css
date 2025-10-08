@@ -77,3 +77,15 @@ input[type="datetime-local"] {
     box-sizing: border-box;
   }
 }
+
+@supports (-webkit-touch-callout: none) {
+  .ios-only {
+    display: inline;
+  }
+}
+
+@supports not (-webkit-touch-callout: none) {
+  .ios-only {
+    display: none;
+  }
+}
