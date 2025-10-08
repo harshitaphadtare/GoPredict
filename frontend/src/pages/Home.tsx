@@ -244,7 +244,7 @@ export default function Home() {
               </label>
               <div className="relative">
                 {!dateStr && (
-                  <span className="ios-only flex justify-between items-center pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/50">
+                  <span className="ios-only touch-only flex justify-between items-center pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/50">
                       <span>dd-mm-yyyy --:--</span>
                       <Calendar className="h-2 w-2"/>
                   </span>
