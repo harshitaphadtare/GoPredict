@@ -66,10 +66,9 @@ export default function Home() {
       if (toLocation && location.id === toLocation.id) {
         setWarning("Start and End locations cannot be the same. Please select different locations.");
       } else {
-        setWarning(""); // Clear warning if start location is changed or cleared
+        setWarning("");
       }
     } else {
-      // If start location is cleared, also clear warning
       setWarning("");
     }
   };
@@ -238,8 +237,12 @@ export default function Home() {
 
             {/* Warning Message */}
             {warning && (
-              <div className="mb-2 flex items-center gap-2 rounded bg-red-900/30 text-red-300 px-3 py-2 text-sm font-medium border border-red-800">
-                <AlertTriangle className="h-4 w-4 text-red-400" />
+              <div className="
+                mb-2 flex items-center gap-2 rounded border px-3 py-2 text-sm font-medium
+                bg-red-100 text-red-700 border-red-300
+                dark:bg-red-900/30 dark:text-red-300 dark:border-red-800
+              ">
+                <AlertTriangle className="h-4 w-4 text-red-500 dark:text-red-400" />
                 {warning}
               </div>
             )}
@@ -256,6 +259,7 @@ export default function Home() {
                   setToLocation(null);
                   setFromId('');
                   setToId('');
+                  setWarning("");
                 }}
               >
                 New York City
@@ -270,6 +274,7 @@ export default function Home() {
                   setToLocation(null);
                   setFromId('');
                   setToId('');
+                  setWarning("");
                 }}
               >
                 San Francisco
