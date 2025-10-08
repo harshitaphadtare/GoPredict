@@ -49,6 +49,7 @@ export default function Home() {
   const [animKey, setAnimKey] = useState(0);
   const [currentCity, setCurrentCity] = useState<'new_york' | 'san_francisco'>('new_york');
   const [isLoading, setIsLoading] = useState(false);
+  const [warning, setWarning] = useState(""); // Add this line
 
   // Update city when location changes
   const handleFromLocationSelect = (location: Location | null) => {
@@ -61,6 +62,12 @@ export default function Home() {
         setToLocation(null);
         setToId('');
       }
+      // Show warning if same as destination
+      if (toLocation && location.id === toLocation.id) {
+        setWarning("Start and End locations cannot be the same. Please select different locations.");
+      } else {
+        setWarning("");
+      }
     }
   };
 
@@ -69,6 +76,12 @@ export default function Home() {
     if (location) {
       const city = location.id.startsWith('ny_') ? 'new_york' : 'san_francisco';
       setCurrentCity(city);
+      // Show warning if same as start
+      if (fromLocation && location.id === fromLocation.id) {
+        setWarning("Start and End locations cannot be the same. Please select different locations.");
+      } else {
+        setWarning("");
+      }
     }
   };
 
@@ -76,7 +89,15 @@ export default function Home() {
 
   const onPredict = async () => {
     if (!fromLocation || !toLocation) return;
-    
+
+    // Show warning if start and end are the same
+    if (fromLocation.id === toLocation.id) {
+      setWarning("Start and End locations cannot be the same. Please select different locations.");
+      return;
+    } else {
+      setWarning(""); // Clear warning if valid
+    }
+
     const date = new Date(dateStr);
     setIsLoading(true);
 
@@ -213,7 +234,9 @@ export default function Home() {
             {/* City Switcher */}
             <div className="grid grid-cols-2 gap-2">
               <Button
-                variant={currentCity === 'new_york' ? 'default' : 'outline'}
+                className={currentCity === 'new_york'
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-foreground border border-border"}
                 onClick={() => {
                   setCurrentCity('new_york');
                   setFromLocation(null);
@@ -225,7 +248,9 @@ export default function Home() {
                 New York City
               </Button>
               <Button
-                variant={currentCity === 'san_francisco' ? 'default' : 'outline'}
+                className={currentCity === 'san_francisco'
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-foreground border border-border"}
                 onClick={() => {
                   setCurrentCity('san_francisco');
                   setFromLocation(null);
@@ -253,11 +278,18 @@ export default function Home() {
             
             <Button
               onClick={onPredict}
-              disabled={!canPredict || isLoading}
+              disabled={!fromLocation || !toLocation || !dateStr || isLoading}
               className="h-12 w-full rounded-lg bg-primary text-primary-foreground shadow-soft transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? "Predicting..." : "Predict Travel Time"}
             </Button>
+
+            {/* Warning Message */}
+            {warning && (
+              <div className="mb-2 rounded bg-red-100 text-red-700 px-3 py-2 text-sm font-medium border border-red-300">
+                {warning}
+              </div>
+            )}
 
             {/* City Info */}
             <div className="mt-4 rounded-lg bg-muted/50 p-3">
