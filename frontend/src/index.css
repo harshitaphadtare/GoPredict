@@ -66,11 +66,10 @@ input[type="datetime-local"] {
   appearance: none;
 }
 
-@supports (-webkit-touch-callout: none) {
-  /* Safari/iOS-specific fixes */
+/* @supports (-webkit-touch-callout: none) {
   input[type="datetime-local"] {
-    font-size: 16px; /* prevents Safari zooming on focus */
-    overflow: hidden; /* prevents weird clipping */
+    font-size: 16px;
+    overflow: hidden; 
     text-overflow: ellipsis;
   }
-}
+} */
