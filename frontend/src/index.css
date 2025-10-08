@@ -57,3 +57,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+input[type="datetime-local"] {
+  width: 100%;
+  min-width: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+@supports (-webkit-touch-callout: none) {
+  /* Safari/iOS-specific fixes */
+  input[type="datetime-local"] {
+    font-size: 16px; /* prevents Safari zooming on focus */
+    overflow: hidden; /* prevents weird clipping */
+    text-overflow: ellipsis;
+  }
+}

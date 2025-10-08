@@ -238,7 +238,7 @@ export default function Home() {
               </Button>
             </div>
             
-            <div className="w-full">
+            <div className="w-full overflow-hidden">
               <label htmlFor="start_time" className="mb-2 block text-sm font-medium text-foreground/80">
                 Date & Time of Travel
               </label>
@@ -264,7 +264,8 @@ export default function Home() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 <span>
-                  Currently showing locations for: <strong>{currentCity === 'new_york' ? 'New York City' : 'San Francisco'}</strong>
+                  Currently showing locations for: <span className="sm:hidden"><br/></span> 
+                  <strong>{currentCity === 'new_york' ? 'New York City' : 'San Francisco'}</strong>
                 </span>
               </div>
             </div>
