@@ -89,8 +89,6 @@ export default function Home() {
     }
   };
 
-  const canPredict = fromLocation && toLocation && dateStr && fromLocation.id !== toLocation.id;
-
   const onPredict = async () => {
     if (!fromLocation || !toLocation) return;
 
