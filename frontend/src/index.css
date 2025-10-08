@@ -58,18 +58,18 @@
   }
 }
 
-/* input[type="datetime-local"] {
+input[type="datetime-local"] {
   width: 100%;
   min-width: 0;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-} */
+} 
 
-/* @supports (-webkit-touch-callout: none) {
+@supports (-webkit-touch-callout: none) {
   input[type="datetime-local"] {
     font-size: 16px;
     overflow: hidden; 
     text-overflow: ellipsis;
   }
-} */
+}
