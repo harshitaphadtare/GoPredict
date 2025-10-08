@@ -66,8 +66,11 @@ export default function Home() {
       if (toLocation && location.id === toLocation.id) {
         setWarning("Start and End locations cannot be the same. Please select different locations.");
       } else {
-        setWarning("");
+        setWarning(""); // Clear warning if start location is changed or cleared
       }
+    } else {
+      // If start location is cleared, also clear warning
+      setWarning("");
     }
   };
 
@@ -82,6 +85,8 @@ export default function Home() {
       } else {
         setWarning("");
       }
+    } else {
+      setWarning("");
     }
   };
 
@@ -230,7 +235,14 @@ export default function Home() {
               city={currentCity}
               placeholder="Search for end location..."
             />
-            
+
+            {/* Warning Message */}
+            {warning && (
+              <div className="mb-2 rounded bg-red-900/30 text-red-300 px-3 py-2 text-sm font-medium border border-red-800">
+                {warning}
+              </div>
+            )}
+
             {/* City Switcher */}
             <div className="grid grid-cols-2 gap-2">
               <Button
@@ -283,13 +295,6 @@ export default function Home() {
             >
               {isLoading ? "Predicting..." : "Predict Travel Time"}
             </Button>
-
-            {/* Warning Message */}
-            {warning && (
-              <div className="mb-2 rounded bg-red-100 text-red-700 px-3 py-2 text-sm font-medium border border-red-300">
-                {warning}
-              </div>
-            )}
 
             {/* City Info */}
             <div className="mt-4 rounded-lg bg-muted/50 p-3">
