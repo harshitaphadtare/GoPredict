@@ -29,7 +29,32 @@ except ImportError:
 # Utilities and normalizers
 # ==========================
 def normalize_features(X):
-    """Normalize features into different ranges for training"""
+    """
+    Normalize features into different ranges for model training.
+    
+    This function applies different normalization ranges to different feature groups:
+    coordinates, distances, precipitation, time features, and binary flags.
+    
+    Args:
+        X (pd.DataFrame): Input features containing coordinates (start_lng, start_lat, 
+                         end_lng, end_lat), distances (manhattan, euclidean, gmaps_distance, 
+                         gmaps_duration), precipitation, time features (weekday, hour), 
+                         and flags (holiday, airport, citycenter, standalone, routing_error, 
+                         short_trip).
+    
+    Returns:
+        pd.DataFrame: Normalized features with:
+            - Coordinates scaled to (-1, 1)
+            - Distances scaled to (0, 10)
+            - Precipitation scaled to (0, 1)
+            - Time features scaled to (0, 5)
+            - Flags left unchanged
+    
+    Examples:
+        >>> X_normalized = normalize_features(train_df.drop('duration', axis=1))
+        >>> print(X_normalized.shape)
+        (10000, 18)
+    """
     features = []
 
     coords = X[['start_lng', 'start_lat', 'end_lng', 'end_lat']]
@@ -66,7 +91,25 @@ def normalize_features(X):
     return pd.concat(features, axis=1)
 
 def plot_feature_importance(model, X):
-    """Plot feature importance for tree based models"""
+    """
+    Plot feature importance for tree-based models.
+    
+    Creates a horizontal bar chart showing the importance of each feature
+    as determined by the model's feature_importances_ attribute.
+    
+    Args:
+        model: A trained tree-based model (e.g., RandomForestRegressor, XGBRegressor)
+               that has a feature_importances_ attribute.
+        X (pd.DataFrame): Input features DataFrame used to get column names.
+    
+    Returns:
+        None: Displays the plot directly using matplotlib.
+    
+    Examples:
+        >>> model = XGBRegressor()
+        >>> model.fit(X_train, y_train)
+        >>> plot_feature_importance(model, X_train)
+    """
     imp = pd.DataFrame(
         model.feature_importances_,
         index=X.columns,
@@ -76,7 +119,24 @@ def plot_feature_importance(model, X):
     plt.show()
 
 def plot_loss_curve(history):
-    """Plot training vs validation loss for neural networks."""
+    """
+    Plot training vs validation loss curves for neural networks.
+    
+    Creates a line plot showing how training and validation loss
+    evolved across epochs during model training.
+    
+    Args:
+        history: A Keras History object returned by model.fit() containing
+                loss and val_loss in its history dictionary.
+    
+    Returns:
+        None: Displays the plot directly using matplotlib.
+    
+    Examples:
+        >>> model = Sequential([...])
+        >>> history = model.fit(X_train, y_train, validation_split=0.2, epochs=100)
+        >>> plot_loss_curve(history)
+    """
     plt.figure()
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
@@ -91,7 +151,27 @@ def plot_loss_curve(history):
 # =========================================
 def predict_duration(model, test_df, model_name="Model"):
     """
-    Make predictions on test data
+    Make duration predictions on test data with automatic feature alignment.
+    
+    This function handles feature alignment by ensuring the test data has
+    the same features in the same order as expected by the model.
+    
+    Args:
+        model: A trained sklearn-compatible model with a predict() method.
+        test_df (pd.DataFrame): Test dataset, optionally containing 'duration' column
+                               which will be dropped if present.
+        model_name (str, optional): Name of the model for logging purposes. 
+                                   Defaults to "Model".
+    
+    Returns:
+        np.ndarray: Array of predicted duration values.
+    
+    Examples:
+        >>> model = XGBRegressor()
+        >>> model.fit(X_train, y_train)
+        >>> predictions = predict_duration(model, test_df, "XGBoost")
+        >>> print(predictions[:5])
+        [450.2, 523.1, 380.5, 612.3, 295.8]
     """
     logging.info(f"Making predictions with {model_name}...")
 
@@ -135,7 +215,27 @@ def predict_duration(model, test_df, model_name="Model"):
     return predictions
 
 def compare_predictions(pred_1, pred_2, title="Prediction 1 vs Prediction 2", save_plot=True):
-    """Compare two sets of predictions using histograms"""
+    """
+    Compare two sets of predictions using overlaid histograms.
+    
+    Creates a histogram visualization comparing the distribution of two
+    prediction sets, useful for analyzing model agreement or differences.
+    
+    Args:
+        pred_1 (np.ndarray or list): First set of predictions.
+        pred_2 (np.ndarray or list): Second set of predictions.
+        title (str, optional): Plot title. Defaults to "Prediction 1 vs Prediction 2".
+        save_plot (bool, optional): Whether to save the plot to the output directory.
+                                   Defaults to True.
+    
+    Returns:
+        None: Displays the plot and optionally saves it to output/prediction_comparison_TIMESTAMP.png.
+    
+    Examples:
+        >>> pred_xgb = model_xgb.predict(X_test)
+        >>> pred_rf = model_rf.predict(X_test)
+        >>> compare_predictions(pred_xgb, pred_rf, "XGBoost vs Random Forest")
+    """
     bins = np.histogram(np.hstack((pred_1, pred_2)), bins=100)[1]  # get the bin edges
 
     plt.figure(figsize=(10, 6))
@@ -155,7 +255,26 @@ def compare_predictions(pred_1, pred_2, title="Prediction 1 vs Prediction 2", sa
     plt.show()
 
 def to_submission(prediction, output_dir="output"):
-    """Create submission file from predictions"""
+    """
+    Create a CSV submission file from model predictions.
+    
+    Generates a timestamped CSV file with predictions formatted for
+    competition submission, with row_id as index and duration as the column.
+    
+    Args:
+        prediction (np.ndarray or list): Array of predicted duration values.
+        output_dir (str, optional): Directory to save the submission file.
+                                   Defaults to "output".
+    
+    Returns:
+        str: Path to the saved submission file.
+    
+    Examples:
+        >>> predictions = model.predict(test_df)
+        >>> file_path = to_submission(predictions)
+        >>> print(file_path)
+        'output/test_prediction_20250930_103835.csv'
+    """
     os.makedirs(output_dir, exist_ok=True)
     date_string = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     file_string = f"{output_dir}/test_prediction_{date_string}.csv"
@@ -175,6 +294,25 @@ def to_submission(prediction, output_dir="output"):
 # Individual model trainers
 # ===========================
 def train_linear_regression(Xn_train, Yn_train, Xn_val, Yn_val):
+    """
+    Train a Linear Regression model and evaluate on validation set.
+    
+    Fits a standard Linear Regression model using Ordinary Least Squares (OLS)
+    and logs the RMSE performance on the validation set along with training time.
+    
+    Args:
+        Xn_train (pd.DataFrame or np.ndarray): Normalized training features.
+        Yn_train (pd.Series or np.ndarray): Training target values (durations).
+        Xn_val (pd.DataFrame or np.ndarray): Normalized validation features.
+        Yn_val (pd.Series or np.ndarray): Validation target values (durations).
+    
+    Returns:
+        LinearRegression: Trained Linear Regression model.
+    
+    Examples:
+        >>> model = train_linear_regression(Xn_train, y_train, Xn_val, y_val)
+        >>> predictions = model.predict(Xn_test)
+    """
     start_time = time.time()
     model = LinearRegression()
     model.fit(Xn_train, Yn_train)
@@ -188,6 +326,27 @@ def train_linear_regression(Xn_train, Yn_train, Xn_val, Yn_val):
     return model
 
 def train_ridge_regression(Xn_train, Yn_train, Xn_val, Yn_val, alpha=0.5):
+    """
+    Train a Ridge Regression model with L2 regularization.
+    
+    Fits a Ridge Regression model with L2 penalty to prevent overfitting
+    and logs the RMSE performance on the validation set along with training time.
+    
+    Args:
+        Xn_train (pd.DataFrame or np.ndarray): Normalized training features.
+        Yn_train (pd.Series or np.ndarray): Training target values (durations).
+        Xn_val (pd.DataFrame or np.ndarray): Normalized validation features.
+        Yn_val (pd.Series or np.ndarray): Validation target values (durations).
+        alpha (float, optional): Regularization strength. Higher values mean
+                                stronger regularization. Defaults to 0.5.
+    
+    Returns:
+        Ridge: Trained Ridge Regression model.
+    
+    Examples:
+        >>> model = train_ridge_regression(Xn_train, y_train, Xn_val, y_val, alpha=1.0)
+        >>> predictions = model.predict(Xn_test)
+    """
     start_time = time.time()
     model = Ridge(alpha=alpha)
     model.fit(Xn_train, Yn_train)
@@ -201,6 +360,28 @@ def train_ridge_regression(Xn_train, Yn_train, Xn_val, Yn_val, alpha=0.5):
     return model
 
 def train_lasso_regression(Xn_train, Yn_train, Xn_val, Yn_val, alpha=0.1):
+    """
+    Train a Lasso Regression model with L1 regularization.
+    
+    Fits a Lasso Regression model with L1 penalty that can perform feature
+    selection by driving some coefficients to zero, and logs the RMSE performance
+    on the validation set along with training time.
+    
+    Args:
+        Xn_train (pd.DataFrame or np.ndarray): Normalized training features.
+        Yn_train (pd.Series or np.ndarray): Training target values (durations).
+        Xn_val (pd.DataFrame or np.ndarray): Normalized validation features.
+        Yn_val (pd.Series or np.ndarray): Validation target values (durations).
+        alpha (float, optional): Regularization strength. Higher values mean
+                                stronger regularization. Defaults to 0.1.
+    
+    Returns:
+        Lasso: Trained Lasso Regression model.
+    
+    Examples:
+        >>> model = train_lasso_regression(Xn_train, y_train, Xn_val, y_val, alpha=0.05)
+        >>> predictions = model.predict(Xn_test)
+    """
     start_time = time.time()
     model = Lasso(alpha=alpha, max_iter=5000)
     model.fit(Xn_train, Yn_train)
@@ -214,6 +395,26 @@ def train_lasso_regression(Xn_train, Yn_train, Xn_val, Yn_val, alpha=0.1):
     return model
 
 def train_svr(X_train, Y_train, X_val, Y_val):
+    """
+    Train a Support Vector Regression (SVR) model.
+    
+    Fits a Support Vector Regression model using default RBF kernel
+    and logs the RMSE performance on the validation set along with training time.
+    Note: SVR can be computationally expensive on large datasets.
+    
+    Args:
+        X_train (pd.DataFrame or np.ndarray): Training features (non-normalized).
+        Y_train (pd.Series or np.ndarray): Training target values (durations).
+        X_val (pd.DataFrame or np.ndarray): Validation features (non-normalized).
+        Y_val (pd.Series or np.ndarray): Validation target values (durations).
+    
+    Returns:
+        SVR: Trained Support Vector Regression model.
+    
+    Examples:
+        >>> model = train_svr(X_train, y_train, X_val, y_val)
+        >>> predictions = model.predict(X_test)
+    """
     start_time = time.time()
     model = SVR()
     model.fit(X_train, Y_train)
@@ -227,6 +428,27 @@ def train_svr(X_train, Y_train, X_val, Y_val):
     return model
 
 def train_xgb(X_train, Y_train, X_val, Y_val):
+    """
+    Train an XGBoost Regression model with predefined hyperparameters.
+    
+    Fits an XGBoost gradient boosting model with specific hyperparameters
+    optimized for this problem, logs RMSE performance on validation set,
+    and displays feature importance plot.
+    
+    Args:
+        X_train (pd.DataFrame or np.ndarray): Training features (non-normalized).
+        Y_train (pd.Series or np.ndarray): Training target values (durations).
+        X_val (pd.DataFrame or np.ndarray): Validation features (non-normalized).
+        Y_val (pd.Series or np.ndarray): Validation target values (durations).
+    
+    Returns:
+        XGBRegressor: Trained XGBoost model with n_estimators=500, 
+                     learning_rate=0.045, max_depth=9, reg_lambda=0.5.
+    
+    Examples:
+        >>> model = train_xgb(X_train, y_train, X_val, y_val)
+        >>> predictions = model.predict(X_test)
+    """
     start_time = time.time()
     model = XGBRegressor(n_estimators=500, learning_rate=0.045, max_depth=9, reg_lambda=0.5, verbosity=0)
     model.fit(X_train, Y_train)
@@ -241,6 +463,25 @@ def train_xgb(X_train, Y_train, X_val, Y_val):
     return model
 
 def train_random_forest(X_train, Y_train, X_val, Y_val):
+    """
+    Train a Random Forest Regression model.
+    
+    Fits a Random Forest ensemble model with 500 trees, logs RMSE performance
+    on validation set, and displays feature importance plot.
+    
+    Args:
+        X_train (pd.DataFrame or np.ndarray): Training features (non-normalized).
+        Y_train (pd.Series or np.ndarray): Training target values (durations).
+        X_val (pd.DataFrame or np.ndarray): Validation features (non-normalized).
+        Y_val (pd.Series or np.ndarray): Validation target values (durations).
+    
+    Returns:
+        RandomForestRegressor: Trained Random Forest model with 500 estimators.
+    
+    Examples:
+        >>> model = train_random_forest(X_train, y_train, X_val, y_val)
+        >>> predictions = model.predict(X_test)
+    """
     start_time = time.time()
     model = RandomForestRegressor(n_estimators=500)
     model.fit(X_train, Y_train)
@@ -255,6 +496,32 @@ def train_random_forest(X_train, Y_train, X_val, Y_val):
     return model
 
 def train_neural_network(Xn_train, Yn_train, Xn_val, Yn_val):
+    """
+    Train a Deep Neural Network for regression using Keras.
+    
+    Builds and trains a fully connected neural network with 3 hidden layers
+    and L2 regularization. Displays loss curves and logs RMSE performance
+    on validation set.
+    
+    Architecture:
+        - Input layer: 20 neurons (ReLU)
+        - Hidden layer 1: 150 neurons (ReLU, L2=0.2)
+        - Hidden layer 2: 60 neurons (ReLU, L2=0.2)
+        - Output layer: 1 neuron (Linear)
+    
+    Args:
+        Xn_train (pd.DataFrame or np.ndarray): Normalized training features.
+        Yn_train (pd.Series or np.ndarray): Training target values (durations).
+        Xn_val (pd.DataFrame or np.ndarray): Normalized validation features.
+        Yn_val (pd.Series or np.ndarray): Validation target values (durations).
+    
+    Returns:
+        Sequential: Trained Keras Sequential model with MSE loss and Adam optimizer.
+    
+    Examples:
+        >>> model = train_neural_network(Xn_train, y_train, Xn_val, y_val)
+        >>> predictions = model.predict(Xn_test)
+    """
     start_time = time.time()
     model = Sequential()
     model.add(Dense(20, kernel_initializer='normal', input_dim=Xn_train.shape[1], activation='relu'))
@@ -277,7 +544,28 @@ def train_neural_network(Xn_train, Yn_train, Xn_val, Yn_val):
 # Multi-model training (tqdm)
 # ===========================
 def run_regression_models(train_df, models_to_run=None):
-    """Train multiple models on train_df and return them as a dictionary"""
+    """
+    Train multiple regression models and return them as a dictionary.
+    
+    This function orchestrates training of multiple models with progress tracking,
+    automatically handling data splitting and normalization where needed.
+    
+    Args:
+        train_df (pd.DataFrame): Training dataset containing features and 'duration' column.
+        models_to_run (list of str, optional): List of model identifiers to train.
+                                               Available options: 'LINREG', 'RIDGE', 'LASSO',
+                                               'SVR', 'XGB', 'RF', 'NN'.
+                                               Defaults to ['XGB'].
+    
+    Returns:
+        dict: Dictionary mapping model names to trained model objects.
+              Keys are descriptive names (e.g., 'XGBoost', 'Random Forest').
+    
+    Examples:
+        >>> models = run_regression_models(train_df, ['XGB', 'RF', 'LINREG'])
+        >>> xgb_model = models['XGBoost']
+        >>> predictions = xgb_model.predict(test_features)
+    """
     if models_to_run is None:
         models_to_run = ['XGB']
 
@@ -322,7 +610,28 @@ def run_regression_models(train_df, models_to_run=None):
 # =========================================
 def hyperparameter_tuning_xgb(train_df, test_size=0.2, random_state=1):
     """
-    Perform hyperparameter tuning for XGBoost
+    Perform grid search hyperparameter tuning for XGBoost model.
+    
+    Searches over max_depth and learning_rate parameters to find the optimal
+    combination that minimizes RMSE on validation set. Displays progress and
+    tracks top 3 parameter combinations.
+    
+    Args:
+        train_df (pd.DataFrame): Training dataset containing features and 'duration' column.
+        test_size (float, optional): Proportion of data to use for validation.
+                                    Defaults to 0.2.
+        random_state (int, optional): Random seed for reproducibility. Defaults to 1.
+    
+    Returns:
+        tuple: A tuple containing:
+            - XGBRegressor: Best tuned model trained with optimal parameters
+            - dict: Dictionary of best hyperparameters
+            - float: RMSE of the best model on validation set
+    
+    Examples:
+        >>> best_model, best_params, rmse = hyperparameter_tuning_xgb(train_df)
+        >>> print(f"Best parameters: {best_params}")
+        >>> print(f"Best RMSE: {rmse:.4f}")
     """
     logging.info("Starting XGBoost hyperparameter tuning...")
     logging.info("=" * 50)
@@ -409,7 +718,37 @@ def hyperparameter_tuning_xgb(train_df, test_size=0.2, random_state=1):
 def run_complete_pipeline(train_df, test_df, models_to_run=None,
                           tune_xgb=False, create_submission=True):
     """
-    Run the complete ML pipeline including training and prediction
+    Run the complete machine learning pipeline from training to prediction.
+    
+    This end-to-end function orchestrates model training, optional hyperparameter
+    tuning for XGBoost, and predictions on test data for all specified models.
+    
+    Args:
+        train_df (pd.DataFrame): Training dataset containing features and 'duration' column.
+        test_df (pd.DataFrame): Test dataset for making predictions.
+        models_to_run (list of str, optional): List of model identifiers to train.
+                                               Available: 'LINREG', 'RIDGE', 'LASSO',
+                                               'SVR', 'XGB', 'RF', 'NN'.
+                                               Defaults to None (uses default from run_regression_models).
+        tune_xgb (bool, optional): Whether to perform hyperparameter tuning for XGBoost.
+                                  If True, creates an additional 'XGBoost_Tuned' model.
+                                  Defaults to False.
+        create_submission (bool, optional): Parameter for future submission file creation.
+                                           Currently not used. Defaults to True.
+    
+    Returns:
+        dict: Dictionary containing:
+            - 'models' (dict): Trained model objects keyed by model name
+            - 'predictions' (dict): Prediction arrays keyed by model name
+    
+    Examples:
+        >>> results = run_complete_pipeline(
+        ...     train_df, test_df, 
+        ...     models_to_run=['XGB', 'RF'],
+        ...     tune_xgb=True
+        ... )
+        >>> xgb_predictions = results['predictions']['XGBoost']
+        >>> tuned_xgb_model = results['models']['XGBoost_Tuned']
     """
     logging.info("Starting Complete ML Pipeline...")
     logging.info("=" * 60)
