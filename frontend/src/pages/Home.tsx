@@ -4,7 +4,7 @@ import LeafletMap from "@/components/LeafletMap";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
-import { Clock, MapPin, Car } from "lucide-react";
+import { Clock, MapPin, Car, Calendar } from "lucide-react";
 import Footer from "@/components/Footer";
 
 type Location = {
@@ -244,8 +244,9 @@ export default function Home() {
               </label>
               <div className="relative">
                 {!dateStr && (
-                  <span className="ios-only pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/50">
-                    dd-mm-yyyy --:-- 📅
+                  <span className="ios-only flex justify-between items-center pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/50">
+                      <span>dd-mm-yyyy --:--</span>
+                      <Calendar className="h-2 w-2"/>
                   </span>
                 )}
                 <input
