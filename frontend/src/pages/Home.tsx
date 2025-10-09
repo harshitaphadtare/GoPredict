@@ -152,7 +152,10 @@ export default function Home() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
       {/* Background Pattern */}
-      <div
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.6 }}
+        transition={{ duration: 0.8 }}
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 opacity-60"
         style={{
@@ -162,30 +165,52 @@ export default function Home() {
           backgroundSize: "60px 60px",
         }}
       />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/80 via-white/60 to-white/30 dark:from-black/40 dark:via-black/25 dark:to-black/10" />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        className="absolute inset-0 -z-10 bg-gradient-to-br from-white/80 via-white/60 to-white/30 dark:from-black/40 dark:via-black/25 dark:to-black/10"
+      />
 
       {/* Header */}
-      <header
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
         ref={resultRef}
         id="prediction-result"
         className="container mx-auto flex h-16 items-center justify-between px-4"
       >
-        <div className="flex items-center gap-3">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="flex items-center gap-3"
+        >
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary shadow-soft">
             <Car className="h-5 w-5" />
           </div>
           <span className="text-base font-semibold tracking-tight">
             GoPredict
           </span>
-        </div>
-        <div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
           <ThemeToggle />
-        </div>
-      </header>
+        </motion.div>
+      </motion.header>
 
       {/* Main Content */}
       <main className="container mx-auto flex-1 px-4 pb-4 pt-2">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="grid grid-cols-1 gap-6 md:grid-cols-2"
+        >
           {/* Left Column - Results and Map */}
           <div className="flex flex-col gap-4">
             {/* Prediction Result - always visible */}
@@ -292,15 +317,26 @@ export default function Home() {
             </AnimatePresence>
 
             {/* Map */}
-            <LeafletMap
-              from={fromLocation}
-              to={toLocation}
-              animateKey={`${animKey}-${fromLocation?.id}-${toLocation?.id}`}
-            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <LeafletMap
+                from={fromLocation}
+                to={toLocation}
+                animateKey={`${animKey}-${fromLocation?.id}-${toLocation?.id}`}
+              />
+            </motion.div>
           </div>
 
           {/* Right Column - Input Form */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card/90 p-4 shadow-soft backdrop-blur">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-col gap-3 rounded-2xl border border-border bg-card/90 p-4 shadow-soft backdrop-blur"
+          >
             <h2 className="text-lg font-semibold mb-2">Plan Your Trip</h2>
 
             <LocationSearch
@@ -326,7 +362,12 @@ export default function Home() {
             />
 
             {/* City Switcher */}
-            <div className="grid grid-cols-2 gap-2">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+              className="grid grid-cols-2 gap-2"
+            >
               <Button
                 variant={currentCity === "new_york" ? "default" : "outline"}
                 onClick={() => {
@@ -353,9 +394,14 @@ export default function Home() {
               >
                 San Francisco
               </Button>
-            </div>
+            </motion.div>
 
-            <div className="w-full">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.6 }}
+              className="w-full"
+            >
               <label
                 htmlFor="start_time"
                 className="mb-2 block text-sm font-medium text-foreground/80"
@@ -369,18 +415,29 @@ export default function Home() {
                 onChange={(e) => setDateStr(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground shadow-soft outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
               />
-            </div>
+            </motion.div>
 
-            <Button
-              onClick={onPredict}
-              disabled={!canPredict || isLoading}
-              className="h-12 w-full rounded-lg bg-primary text-primary-foreground shadow-soft transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.7 }}
             >
-              {isLoading ? "Predicting..." : "Predict Travel Time"}
-            </Button>
+              <Button
+                onClick={onPredict}
+                disabled={!canPredict || isLoading}
+                className="h-12 w-full rounded-lg bg-primary text-primary-foreground shadow-soft transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isLoading ? "Predicting..." : "Predict Travel Time"}
+              </Button>
+            </motion.div>
 
             {/* City Info */}
-            <div className="mt-4 rounded-lg bg-muted/50 p-3">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.8 }}
+              className="mt-4 rounded-lg bg-muted/50 p-3"
+            >
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 <span>
@@ -392,13 +449,19 @@ export default function Home() {
                   </strong>
                 </span>
               </div>
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       </main>
 
       {/* Footer */}
-      <Footer />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+      >
+        <Footer />
+      </motion.div>
     </div>
   );
 }
