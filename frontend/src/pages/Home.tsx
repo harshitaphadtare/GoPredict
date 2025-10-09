@@ -72,6 +72,19 @@ export default function Home() {
     }
   };
 
+  const formatDateTime = (datetime: string) => {
+    if (!datetime) return 'dd-mm-yyyy --:--';
+    
+    const date = new Date(datetime);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+  };
+
   const canPredict = fromLocation && toLocation && dateStr && fromLocation.id !== toLocation.id;
 
   const onPredict = async () => {
@@ -242,23 +255,27 @@ export default function Home() {
               <label htmlFor="start_time" className="mb-2 block text-sm font-medium text-foreground/80">
                 Date & Time of Travel
               </label>
-              <div className="relative">
-                {!dateStr && (
-                  <span className="ios-only flex justify-between items-center pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/50">
-                      <span>dd-mm-yyyy --:--</span>
-                      <Calendar className="h-3 w-3"/>
-                  </span>
-                )}
+              <div className="relative min-h-[48px]">
+        
                 <input
-                id="start_time"
-                type="datetime-local"
-                value={dateStr}
-                onChange={(e) => setDateStr(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground shadow-soft outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-              />
+                  id="start_time"
+                  type="datetime-local"
+                  value={dateStr}
+                  onChange={(e) => setDateStr(e.target.value)}
+                  className="absolute inset-0 w-full opacity-0 h-full cursor-pointer z-1000"
+                />
+            
+                <div className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground 
+                shadow-soft transition focus-within:border-primary focus-within:ring-2 
+                focus-within:ring-primary/30 flex justify-between items-center pointer-events-none">
+                  <span className="text-sm pointer-events-none">  
+                    {dateStr ? formatDateTime(dateStr) : 'dd-mm-yyyy --:--'}
+                  </span>
+                  <Calendar className="h-4 w-4 pointer-events-none text-foreground/60" />
+                </div>
               </div>
-              
             </div>
+
             
             <Button
               onClick={onPredict}

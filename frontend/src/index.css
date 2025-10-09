@@ -89,13 +89,3 @@ input[type="datetime-local"] {
     display: none;
   }
 }
-
-@media (pointer: coarse) {
-  .touch-only {
-    display: inline;
-  }
-}
-
-.touch-only {
-  display: none;
-}
