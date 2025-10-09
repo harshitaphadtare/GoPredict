@@ -85,7 +85,14 @@ export default function Home() {
       const city = location.id.startsWith("ny_") ? "new_york" : "san_francisco";
       setCurrentCity(city);
     }
-  };
+
+    // Show warning if same as start
+    if (fromLocation && location?.id === fromLocation.id) {
+      setWarning("Start and End locations cannot be the same. Please select different locations.");
+    } else {
+      setWarning("");
+    }
+    } 
 
   const formatDateTime = (datetime: string) => {
     if (!datetime) return 'dd-mm-yyyy --:--';
