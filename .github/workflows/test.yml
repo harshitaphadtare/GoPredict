@@ -18,17 +18,30 @@ jobs:
         node-version: [18.x, 20.x]
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
-      - run: pnpm install
+
+      # --- Lockfile Sync Check (added section) ---
+      - name: Check lockfile sync
+        run: |
+          pnpm install --frozen-lockfile || {
+            echo "❌ Lockfile is out of sync with package.json."
+            echo "Please run 'pnpm install' locally to update pnpm-lock.yaml and commit it."
+            exit 1
+          }
+
+      # --- Install & Run Tests ---
       - run: pnpm run typecheck
       - run: pnpm run test:run
       - run: pnpm run test:coverage
+
       - uses: codecov/codecov-action@v4
         with:
           file: ./frontend/coverage/lcov.info
@@ -47,16 +60,28 @@ jobs:
         node-version: [18.x, 20.x]
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
-      - run: pnpm install
+
+      # --- Lockfile Sync Check (added section) ---
+      - name: Check lockfile sync
+        run: |
+          pnpm install --frozen-lockfile || {
+            echo "❌ Lockfile is out of sync with package.json."
+            echo "Please run 'pnpm install' locally to update pnpm-lock.yaml and commit it."
+            exit 1
+          }
+
       - run: pnpm test
       - run: pnpm run test:coverage
+
       - uses: codecov/codecov-action@v4
         with:
           file: ./backend/coverage/lcov.info
@@ -69,20 +94,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
           cache: "pip"
+
       - run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov
+
       - run: |
           if [ -d "tests" ] || [ -f "test_*.py" ] || find . -name "*_test.py" | grep -q .; then
             python -m pytest --cov=src --cov-report=xml --cov-report=term
           else
             echo "No Python tests found, skipping..."
           fi
+
       - run: |
           python -m py_compile main.py
           python -m py_compile config.py
@@ -94,23 +123,32 @@ jobs:
     needs: [frontend-tests, backend-tests]
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20.x"
           cache: "pnpm"
-      - run: pnpm install
+
+      # --- Lockfile sync check before running app ---
+      - name: Check lockfile sync
+        run: |
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
       - name: Install backend dependencies
         run: pnpm install
         working-directory: backend
+
       - run: pnpm --filter gopredict-backend start &
         env:
           PORT: 8000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          NODE_ENV: 'development'
+          NODE_ENV: "development"
+
       - run: |
           echo "Waiting for backend to be ready..."
           for i in {1..60}; do
@@ -119,9 +157,11 @@ jobs:
             sleep 1
           done
           curl -f http://localhost:8000/api/health
+
       - name: Install frontend dependencies
         run: pnpm install
         working-directory: frontend
+
       - run: pnpm --filter gopredict-frontend build
         env:
           VITE_API_URL: http://localhost:8000
