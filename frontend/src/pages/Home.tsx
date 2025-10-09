@@ -4,7 +4,7 @@ import LeafletMap from "@/components/LeafletMap";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
-import { Clock, MapPin, Car } from "lucide-react";
+import { Clock, MapPin, Car, AlertTriangle } from "lucide-react";
 import Footer from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -52,6 +52,7 @@ export default function Home() {
     "new_york"
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [warning, setWarning] = useState(""); // Add this line
 
   // Update city when location changes
   const handleFromLocationSelect = (location: Location | null) => {
@@ -67,6 +68,14 @@ export default function Home() {
         setToLocation(null);
         setToId("");
       }
+      // Show warning if same as destination
+      if (toLocation && location.id === toLocation.id) {
+        setWarning("Start and End locations cannot be the same. Please select different locations.");
+      } else {
+        setWarning("");
+      }
+    } else {
+      setWarning("");
     }
   };
 
@@ -75,14 +84,27 @@ export default function Home() {
     if (location) {
       const city = location.id.startsWith("ny_") ? "new_york" : "san_francisco";
       setCurrentCity(city);
+      // Show warning if same as start
+      if (fromLocation && location.id === fromLocation.id) {
+        setWarning("Start and End locations cannot be the same. Please select different locations.");
+      } else {
+        setWarning("");
+      }
+    } else {
+      setWarning("");
     }
   };
 
-  const canPredict =
-    fromLocation && toLocation && dateStr && fromLocation.id !== toLocation.id;
-
   const onPredict = async () => {
     if (!fromLocation || !toLocation) return;
+
+    // Show warning if start and end are the same
+    if (fromLocation.id === toLocation.id) {
+      setWarning("Start and End locations cannot be the same. Please select different locations.");
+      return;
+    } else {
+      setWarning(""); // Clear warning if valid
+    }
 
     const date = new Date(dateStr);
     setIsLoading(true);
@@ -361,6 +383,18 @@ export default function Home() {
               placeholder="Search for end location..."
             />
 
+            {/* Warning Message */}
+            {warning && (
+              <div className="
+                mb-2 flex items-center gap-2 rounded border px-3 py-2 text-sm font-medium
+                bg-red-100 text-red-700 border-red-300
+                dark:bg-red-900/30 dark:text-red-300 dark:border-red-800
+              ">
+                <AlertTriangle className="h-4 w-4 text-red-500 dark:text-red-400" />
+                {warning}
+              </div>
+            )}
+
             {/* City Switcher */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -369,27 +403,31 @@ export default function Home() {
               className="grid grid-cols-2 gap-2"
             >
               <Button
-                variant={currentCity === "new_york" ? "default" : "outline"}
+                className={currentCity === 'new_york'
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-foreground border border-border"}
                 onClick={() => {
                   setCurrentCity("new_york");
                   setFromLocation(null);
                   setToLocation(null);
-                  setFromId("");
-                  setToId("");
+                  setFromId('');
+                  setToId('');
+                  setWarning("");
                 }}
               >
                 New York City
               </Button>
               <Button
-                variant={
-                  currentCity === "san_francisco" ? "default" : "outline"
-                }
+                className={currentCity === 'san_francisco'
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-foreground border border-border"}
                 onClick={() => {
                   setCurrentCity("san_francisco");
                   setFromLocation(null);
                   setToLocation(null);
-                  setFromId("");
-                  setToId("");
+                  setFromId('');
+                  setToId('');
+                  setWarning("");
                 }}
               >
                 San Francisco
@@ -424,10 +462,10 @@ export default function Home() {
             >
               <Button
                 onClick={onPredict}
-                disabled={!canPredict || isLoading}
+                disabled={!fromLocation || !toLocation || !dateStr || isLoading}
                 className="h-12 w-full rounded-lg bg-primary text-primary-foreground shadow-soft transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isLoading ? "Predicting..." : "Predict Travel Time"}
+                Predict Travel Time
               </Button>
             </motion.div>
 
