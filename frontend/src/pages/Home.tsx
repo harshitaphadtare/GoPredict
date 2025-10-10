@@ -4,7 +4,7 @@ import LeafletMap from "@/components/LeafletMap";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
-import { Clock, MapPin, Car, AlertTriangle } from "lucide-react";
+import { Clock, MapPin, Car, Calendar, AlertTriangle } from "lucide-react";
 import Footer from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -84,16 +84,30 @@ export default function Home() {
     if (location) {
       const city = location.id.startsWith("ny_") ? "new_york" : "san_francisco";
       setCurrentCity(city);
-      // Show warning if same as start
-      if (fromLocation && location.id === fromLocation.id) {
-        setWarning("Start and End locations cannot be the same. Please select different locations.");
-      } else {
-        setWarning("");
-      }
+    }
+
+    // Show warning if same as start
+    if (fromLocation && location?.id === fromLocation.id) {
+      setWarning("Start and End locations cannot be the same. Please select different locations.");
     } else {
       setWarning("");
     }
+    } 
+
+  const formatDateTime = (datetime: string) => {
+    if (!datetime) return 'dd-mm-yyyy --:--';
+    
+    const date = new Date(datetime);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
   };
+
+  // const canPredict = fromLocation && toLocation && dateStr && fromLocation.id !== toLocation.id;
 
   const onPredict = async () => {
     if (!fromLocation || !toLocation) return;
@@ -438,7 +452,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.6 }}
-              className="w-full"
+              className="w-full overflow-hidden"
             >
               <label
                 htmlFor="start_time"
@@ -446,14 +460,27 @@ export default function Home() {
               >
                 Date & Time of Travel
               </label>
-              <input
-                id="start_time"
-                type="datetime-local"
-                value={dateStr}
-                onChange={(e) => setDateStr(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground shadow-soft outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-              />
+              <div className="relative min-h-[48px]">
+        
+                <input
+                  id="start_time"
+                  type="datetime-local"
+                  value={dateStr}
+                  onChange={(e) => setDateStr(e.target.value)}
+                  className="absolute inset-0 w-full opacity-0 h-full cursor-pointer z-1000"
+                />
+            
+                <div className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground 
+                shadow-soft transition focus-within:border-primary focus-within:ring-2 
+                focus-within:ring-primary/30 flex justify-between items-center pointer-events-none">
+                  <span className="text-sm pointer-events-none">  
+                    {dateStr ? formatDateTime(dateStr) : 'dd-mm-yyyy --:--'}
+                  </span>
+                  <Calendar className="h-4 w-4 pointer-events-none text-foreground/60" />
+                </div>
+              </div>
             </motion.div>
+
 
             <motion.div
               initial={{ opacity: 0, y: 10 }}

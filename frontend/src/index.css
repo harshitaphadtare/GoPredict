@@ -57,3 +57,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+input[type="datetime-local"] {
+  width: 100%;
+  min-width: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+} 
+
+@supports (-webkit-touch-callout: none) {
+  input[type="datetime-local"] {
+    font-size: 16px;
+    -webkit-appearance: none; 
+    appearance: none;
+    min-height: 2.75rem; 
+    line-height: 1.5rem;
+    padding: 0.75rem 1rem;
+    box-sizing: border-box;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  .ios-only {
+    display: inline;
+  }
+}
+
+@supports not (-webkit-touch-callout: none) {
+  .ios-only {
+    display: none;
+  }
+}
