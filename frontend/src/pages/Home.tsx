@@ -107,7 +107,7 @@ export default function Home() {
     return `${day}-${month}-${year} ${hours}:${minutes}`;
   };
 
-  const canPredict = fromLocation && toLocation && dateStr && fromLocation.id !== toLocation.id;
+  // const canPredict = fromLocation && toLocation && dateStr && fromLocation.id !== toLocation.id;
 
   const onPredict = async () => {
     if (!fromLocation || !toLocation) return;
