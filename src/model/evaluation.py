@@ -156,3 +156,68 @@ def save_evaluation_logs(model_results, output_dir="saved_models"):
             f.write("-" * 30 + "\n")
     
     logging.info(f"Evaluation logs saved to: {log_file}")
+
+#visualization function for ML evaluation code that generates and saves prediction-vs-actual scatter plots and residual (error) histograms
+
+def plot_prediction_analysis(model, X_test, y_test, model_name="Model", output_dir="output"):
+    """
+    Generate and save prediction-vs-actual scatter plots and residual histograms.
+    
+    Args:
+        model: Trained model
+        X_test: Test features 
+        y_test: Test targets
+        model_name: Name for plot titles and filename
+        output_dir: Directory to save plots (default: "output")
+    
+    Returns:
+        str: Path to saved plot file
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import os
+    
+    # Make predictions 
+    y_pred = model.predict(X_test)
+    y_true = np.asarray(y_test).ravel()
+    y_pred = np.asarray(y_pred).ravel()
+    
+    # Create figure with two subplots
+    plt.figure(figsize=(12, 5))
+    
+    # for Plot 1: Prediction vs Actual scatter plot
+    plt.subplot(1, 2, 1)
+    plt.scatter(y_true, y_pred, alpha=0.6, s=20)
+    
+    # this is for Perfect prediction line
+    min_val = min(min(y_true), min(y_pred))
+    max_val = max(max(y_true), max(y_pred))
+    plt.plot([min_val, max_val], [min_val, max_val], 'r--', linewidth=2, label='Perfect Prediction')
+    
+    plt.xlabel('Actual Trip Duration (seconds)')
+    plt.ylabel('Predicted Trip Duration (seconds)')
+    plt.title(f'{model_name} - Predictions vs Actual')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    #this is for Plot 2: Residual (Error) Histogram
+    plt.subplot(1, 2, 2)
+    residuals = y_true - y_pred
+    plt.hist(residuals, bins=50, alpha=0.7, edgecolor='black')
+    plt.xlabel('Prediction Error (Actual - Predicted)')
+    plt.ylabel('Frequency')
+    plt.title(f'{model_name} - Error Distribution')
+    plt.axvline(x=0, color='red', linestyle='--', label='Perfect Prediction')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+   #check for output directory and create if not exists
+    os.makedirs(output_dir, exist_ok=True)
+    filename = f"{output_dir}/{model_name.replace(' ', '_')}_prediction_analysis.png"
+    plt.tight_layout()
+    plt.savefig(filename, dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    print(f"📊 {model_name} prediction analysis saved: {filename}")
+    
+    return filename
