@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+gopredict-env/
 
 # Python
 __pycache__/
