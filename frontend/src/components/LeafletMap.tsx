@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
+
 // Fix for default markers not showing in bundled environments
 delete (L.Icon.Default.prototype as any)._getIconUrl
 
@@ -53,6 +54,8 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
       ? `https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${apiKey}`
       : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 
+
+    
     const tiles = L.tileLayer(tileUrl, {
       maxZoom: 19,
       attribution:
@@ -115,15 +118,15 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
         drawStraight()
         return
       }
-      
       try {
-        const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lon},${from.lat}|${to.lon},${to.lat}&mode=drive&format=geojson&apiKey=${apiKey}`
+         //EXAMPLE:https://api.geoapify.com/v1/routing?waypoints=40.7757145,-73.87336398511545|40.6604335,-73.8302749&mode=drive&apiKey=YOUR_API_KEY
+        const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&format=geojson&apiKey=${apiKey}`
+        console.log(url);
         const res = await fetch(url)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json()
-        
+        console.log('Geoapify route data:', data);
         if (!data?.features?.[0]) throw new Error('No route')
-        
         if (routeLayer) routeLayer.remove()
         routeLayer = L.geoJSON(data.features[0], {
           style: { color: '#2563eb', weight: 4, opacity: 0.95 },
