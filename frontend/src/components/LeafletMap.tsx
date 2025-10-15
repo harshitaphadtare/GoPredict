@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { List, Loader2 } from 'lucide-react'
 
 
 // Fix for default markers not showing in bundled environments
@@ -43,7 +44,16 @@ interface LeafletMapProps {
   animateKey?: string | number
 }
 
+interface RouteStep {
+  instruction: {
+    text: string
+  }
+}
+
 export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
+  const [isRouteLoading, setIsRouteLoading] = useState(false)
+  const [routeSteps, setRouteSteps] = useState<RouteStep[]>([])
+
   useEffect(() => {
     const map = L.map('route-map', {
       zoomControl: true,
@@ -111,6 +121,35 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
       ).addTo(map)
     }
 
+    const animateRoute = (geoJsonData: any) => {
+      if (routeLayer) routeLayer.remove();
+
+      const allCoords = geoJsonData.geometry.coordinates.flat(1).map((c: number[]) => L.latLng(c[1], c[0]));
+      const animatedPolyline = L.polyline([], { color: '#2563eb', weight: 4, opacity: 0.95 }).addTo(map);
+      routeLayer = animatedPolyline;
+
+      let i = 0;
+      const step = () => {
+        if (i < allCoords.length) {
+          animatedPolyline.addLatLng(allCoords[i]);
+          i++;
+          requestAnimationFrame(step);
+        } else {
+          // Animation finished, bind the popup
+          const properties = geoJsonData.properties;
+          if (properties) {
+            const distanceKm = (properties.distance / 1000).toFixed(1);
+            const timeMinutes = Math.round(properties.time / 60);
+            animatedPolyline.bindPopup(
+              `<b>Route Details</b><br>Distance: ${distanceKm} km<br>Est. Time: ${timeMinutes} minutes`
+            );
+          }
+        }
+      };
+
+      requestAnimationFrame(step);
+    };
+
     const fetchRoute = async () => {
       if (!from || !to) return
       const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY
@@ -118,6 +157,8 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
         drawStraight()
         return
       }
+      setIsRouteLoading(true)
+      setRouteSteps([]) // Clear previous steps
       try {
          //EXAMPLE:https://api.geoapify.com/v1/routing?waypoints=40.7757145,-73.87336398511545|40.6604335,-73.8302749&mode=drive&apiKey=YOUR_API_KEY
         const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&format=geojson&apiKey=${apiKey}`
@@ -127,12 +168,17 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
         const data = await res.json()
         console.log('Geoapify route data:', data);
         if (!data?.features?.[0]) throw new Error('No route')
-        if (routeLayer) routeLayer.remove()
-        routeLayer = L.geoJSON(data.features[0], {
-          style: { color: '#2563eb', weight: 4, opacity: 0.95 },
-        }).addTo(map)
+        
+        animateRoute(data.features[0]);
+
+        // Extract and set turn-by-turn instructions
+        if (data.features[0]?.properties?.legs?.[0]?.steps) {
+          setRouteSteps(data.features[0].properties.legs[0].steps)
+        }
       } catch {
         drawStraight()
+      } finally {
+        setIsRouteLoading(false)
       }
     }
 
@@ -151,7 +197,7 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
   }, [from?.lat, from?.lon, to?.lat, to?.lon, animateKey])
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-border bg-card/90 shadow-soft backdrop-blur">
+    <div className="flex flex-col w-full overflow-hidden rounded-2xl border border-border bg-card/90 shadow-soft backdrop-blur">
       <div className="flex items-center justify-between border-b border-border px-4 py-3 text-sm text-foreground/70">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-2 w-2 rounded-full bg-primary" />
@@ -163,7 +209,29 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
           <span className="truncate">Select locations to preview</span>
         )}
       </div>
-      <div id="route-map" style={{ height: 360, width: '100%' }} />
+      <div className="relative">
+        <div id="route-map" style={{ height: 360, width: '100%' }} />
+        {isRouteLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+            <Loader2 className="h-10 w-10 animate-spin text-white" />
+          </div>
+        )}
+      </div>
+      {routeSteps.length > 0 && (
+        <div className="border-t border-border">
+          <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium">
+            <List className="h-4 w-4" />
+            <span>Turn-by-Turn Directions</span>
+          </div>
+          <ol className="max-h-48 overflow-y-auto list-decimal list-inside bg-background/50 px-4 pb-3 text-sm">
+            {routeSteps.map((step, index) => (
+              <li key={index} className="py-1.5 border-b border-border/50 last:border-b-0">
+                {step.instruction.text}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   )
 }

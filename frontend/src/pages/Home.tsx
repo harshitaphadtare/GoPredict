@@ -4,7 +4,7 @@ import LeafletMap from "@/components/LeafletMap";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
-import { Clock, MapPin, Car, Calendar, AlertTriangle } from "lucide-react";
+import { Clock, MapPin, Car, Calendar, AlertTriangle ,Loader2} from "lucide-react";
 import Footer from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -45,9 +45,19 @@ export default function Home() {
   const [toId, setToId] = useState("");
   const [fromLocation, setFromLocation] = useState<Location | null>(null);
   const [toLocation, setToLocation] = useState<Location | null>(null);
-  const [dateStr, setDateStr] = useState("");
   const [predicted, setPredicted] = useState<number | null>(null);
   const [animKey, setAnimKey] = useState(0);
+
+  const getInitialDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+  const [dateStr, setDateStr] = useState(getInitialDateTime());
   const [currentCity, setCurrentCity] = useState<"new_york" | "san_francisco">(
     "new_york"
   );
@@ -146,6 +156,7 @@ export default function Home() {
         city: currentCity,
       });
 
+      console.log('Prediction API response:', response);
       if (typeof response.minutes === "number" && isFinite(response.minutes)) {
         setPredicted(response.minutes);
         if (isMobile) {
@@ -466,17 +477,21 @@ export default function Home() {
                   id="start_time"
                   type="datetime-local"
                   value={dateStr}
-                  onChange={(e) => setDateStr(e.target.value)}
-                  className="absolute inset-0 w-full opacity-0 h-full cursor-pointer z-1000"
+                  onChange={(e) => {
+                    console.log('Date and time selected:', e.target.value);
+                    setDateStr(e.target.value);
+                    setWarning('');
+                  }}
+                  className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
                 />
             
                 <div className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground 
-                shadow-soft transition focus-within:border-primary focus-within:ring-2 
-                focus-within:ring-primary/30 flex justify-between items-center pointer-events-none">
-                  <span className="text-sm pointer-events-none">  
+                shadow-soft transition focus-within:border-primary focus-within:ring-2
+                focus-within:ring-primary/30 flex justify-between items-center">
+                  <span className="text-sm">
                     {dateStr ? formatDateTime(dateStr) : 'dd-mm-yyyy --:--'}
                   </span>
-                  <Calendar className="h-4 w-4 pointer-events-none text-foreground/60" />
+                  <Calendar className="h-4 w-4 text-foreground/60" />
                 </div>
               </div>
             </motion.div>
@@ -490,9 +505,16 @@ export default function Home() {
               <Button
                 onClick={onPredict}
                 disabled={!fromLocation || !toLocation || !dateStr || isLoading}
-                className="h-12 w-full rounded-lg bg-primary text-primary-foreground shadow-soft transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground shadow-soft transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Predict Travel Time
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Predicting...</span>
+                  </>
+                ) : (
+                  'Predict Travel Time'
+                )}
               </Button>
             </motion.div>
 
