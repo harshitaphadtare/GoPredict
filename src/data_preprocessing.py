@@ -100,17 +100,47 @@ def preprocess(train_df, test_df):
     return train_df, test_df
 
 
-def save_data(train_df, test_df, train_output_path, test_output_path):
-    '''Save processed train and test data to specified paths.'''
-    os.makedirs(os.path.dirname(train_output_path), exist_ok=True)
-    os.makedirs(os.path.dirname(test_output_path), exist_ok=True)
+def generate_data_summary(df, dataset_name, output_path):
+    '''Generate and save a summary report of the dataset'''
+    summary = []
+    summary.append(f"Data Summary for {dataset_name}")
+    summary.append("=" * 50)
+    summary.append(f"Shape: {df.shape}")
+    summary.append(f"Columns: {list(df.columns)}")
+    summary.append("")
     
-    # Preserve row_id as index
-    train_df.index.name = 'row_id'
-    test_df.index.name = 'row_id'
+    # Missing values
+    missing = df.isnull().sum()
+    if missing.sum() > 0:
+        summary.append("Missing Values:")
+        for col, count in missing[missing > 0].items():
+            summary.append(f"  {col}: {count}")
+    else:
+        summary.append("No missing values")
+    summary.append("")
     
-    train_df.to_csv(train_output_path, index=True, index_label='row_id')
-    test_df.to_csv(test_output_path, index=True, index_label='row_id')
+    # Basic statistics for numeric columns
+    numeric_cols = df.select_dtypes(include=['number']).columns
+    if len(numeric_cols) > 0:
+        summary.append("Numeric Columns Statistics:")
+        stats = df[numeric_cols].describe()
+        summary.append(stats.to_string())
+        summary.append("")
+    
+    # Specific to trip duration if present
+    if 'duration' in df.columns:
+        summary.append("Trip Duration Statistics:")
+        summary.append(f"  Mean: {df['duration'].mean():.2f} seconds")
+        summary.append(f"  Median: {df['duration'].median():.2f} seconds")
+        summary.append(f"  Min: {df['duration'].min():.2f} seconds")
+        summary.append(f"  Max: {df['duration'].max():.2f} seconds")
+        summary.append("")
+    
+    # Save to file
+    with open(output_path, 'w') as f:
+        f.write('\n'.join(summary))
+    
+    logging.info(f"Data summary saved to {output_path}")
     
 
 
