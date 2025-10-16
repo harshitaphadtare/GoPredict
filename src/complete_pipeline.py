@@ -25,7 +25,7 @@ import pandas as pd
 sys.path.append(str(Path(__file__).parent))
 
 # Import preprocessing modules
-from data_preprocessing import load_data, preprocess, save_data as save_preprocessed_data
+from data_preprocessing import load_data, preprocess, save_data as save_preprocessed_data, generate_data_summary
 from feature_pipe import (
     load_eda_data, calc_manhattan_euclidean_dist, add_gmaps_features,
     add_time_features, add_cluster_features, add_precipitation_data,
@@ -153,6 +153,11 @@ class CompleteMLPipeline:
             str(self.paths['eda_test'])
         )
         
+        # Generate data summary
+        logging.info("Generating data summary...")
+        generate_data_summary(train_df, "Preprocessed Train Data", str(self.paths['output'] / "preprocessed_train_summary.txt"))
+        generate_data_summary(test_df, "Preprocessed Test Data", str(self.paths['output'] / "preprocessed_test_summary.txt"))
+        
         logging.info("✅ Data preprocessing completed!")
         return train_df, test_df
     
@@ -226,6 +231,11 @@ class CompleteMLPipeline:
         
         logging.info(f"Final train data shape: {train_df.shape}")
         logging.info(f"Final test data shape: {test_df.shape}")
+        
+        # Generate data summary for final datasets
+        logging.info("Generating final data summary...")
+        generate_data_summary(train_df, "Feature Engineered Train Data", str(self.paths['output'] / "feature_engineered_train_summary.txt"))
+        generate_data_summary(test_df, "Feature Engineered Test Data", str(self.paths['output'] / "feature_engineered_test_summary.txt"))
         
         # Clean up intermediate files
         logging.info("Cleaning up intermediate files...")
