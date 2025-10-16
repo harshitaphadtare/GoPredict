@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { LocationSearch } from "@/components/LocationSearch";
 import LeafletMap from "@/components/LeafletMap";
+import { DateTimePicker } from "@/components/DateTimePicker";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
-import { Clock, MapPin, Car, Calendar, AlertTriangle } from "lucide-react";
+import { Clock, MapPin, Car, AlertTriangle } from "lucide-react";
 import Footer from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -45,7 +46,7 @@ export default function Home() {
   const [toId, setToId] = useState("");
   const [fromLocation, setFromLocation] = useState<Location | null>(null);
   const [toLocation, setToLocation] = useState<Location | null>(null);
-  const [dateStr, setDateStr] = useState("");
+  const [travelDate, setTravelDate] = useState<Date | null>(new Date());
   const [predicted, setPredicted] = useState<number | null>(null);
   const [animKey, setAnimKey] = useState(0);
   const [currentCity, setCurrentCity] = useState<"new_york" | "san_francisco">(
@@ -94,23 +95,8 @@ export default function Home() {
     }
     } 
 
-  const formatDateTime = (datetime: string) => {
-    if (!datetime) return 'dd-mm-yyyy --:--';
-    
-    const date = new Date(datetime);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    
-    return `${day}-${month}-${year} ${hours}:${minutes}`;
-  };
-
-  // const canPredict = fromLocation && toLocation && dateStr && fromLocation.id !== toLocation.id;
-
   const onPredict = async () => {
-    if (!fromLocation || !toLocation) return;
+    if (!fromLocation || !toLocation || !travelDate) return;
 
     // Show warning if start and end are the same
     if (fromLocation.id === toLocation.id) {
@@ -120,7 +106,6 @@ export default function Home() {
       setWarning(""); // Clear warning if valid
     }
 
-    const date = new Date(dateStr);
     setIsLoading(true);
     const isMobile = window.innerWidth <= 768;
 
@@ -142,7 +127,7 @@ export default function Home() {
       const response = await predictTravelTime({
         from: fromLocation,
         to: toLocation,
-        startTime: date.toISOString(),
+        startTime: travelDate.toISOString(),
         city: currentCity,
       });
 
@@ -162,7 +147,7 @@ export default function Home() {
 
     // Fallback calculation
     const km = haversineKm(fromLocation, toLocation);
-    const minutes = estimateMinutes(km, date);
+    const minutes = estimateMinutes(km, travelDate);
     setPredicted(minutes);
     if (isMobile) {
       setTimeout(() => setAnimKey((k) => k + 1), 900);
@@ -454,31 +439,13 @@ export default function Home() {
               transition={{ duration: 0.4, delay: 0.6 }}
               className="w-full overflow-hidden"
             >
-              <label
-                htmlFor="start_time"
-                className="mb-2 block text-sm font-medium text-foreground/80"
-              >
+              <label className="mb-2 block text-sm font-medium text-foreground/80">
                 Date & Time of Travel
               </label>
-              <div className="relative min-h-[48px]">
-        
-                <input
-                  id="start_time"
-                  type="datetime-local"
-                  value={dateStr}
-                  onChange={(e) => setDateStr(e.target.value)}
-                  className="absolute inset-0 w-full opacity-0 h-full cursor-pointer z-1000"
-                />
-            
-                <div className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground 
-                shadow-soft transition focus-within:border-primary focus-within:ring-2 
-                focus-within:ring-primary/30 flex justify-between items-center pointer-events-none">
-                  <span className="text-sm pointer-events-none">  
-                    {dateStr ? formatDateTime(dateStr) : 'dd-mm-yyyy --:--'}
-                  </span>
-                  <Calendar className="h-4 w-4 pointer-events-none text-foreground/60" />
-                </div>
-              </div>
+              <DateTimePicker
+                selected={travelDate}
+                onChange={(date) => setTravelDate(date)}
+              />
             </motion.div>
 
 
@@ -489,7 +456,7 @@ export default function Home() {
             >
               <Button
                 onClick={onPredict}
-                disabled={!fromLocation || !toLocation || !dateStr || isLoading}
+                disabled={!fromLocation || !toLocation || !travelDate || isLoading}
                 className="h-12 w-full rounded-lg bg-primary text-primary-foreground shadow-soft transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Predict Travel Time
