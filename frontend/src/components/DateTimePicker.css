@@ -1,0 +1,130 @@
+/* Custom styles for react-datepicker to match the app's theme */
+
+.react-datepicker-popper {
+  z-index: 20 !important;
+}
+
+.react-datepicker {
+  @apply rounded-lg border border-border bg-background p-2 font-sans text-sm shadow-lg;
+}
+
+.react-datepicker__triangle {
+  display: none;
+}
+
+.react-datepicker__header {
+  @apply rounded-t-md border-b-0 bg-transparent p-2;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  @apply mb-2 text-base font-semibold text-foreground;
+}
+
+.react-datepicker__navigation {
+  @apply top-4;
+}
+
+.react-datepicker__navigation-icon::before {
+  @apply h-2 w-2 border-foreground;
+  border-width: 2px 2px 0 0;
+}
+
+.react-datepicker__day-names,
+.react-datepicker__week {
+  @apply flex justify-around;
+}
+
+.react-datepicker__day-name {
+  @apply m-1 w-8 font-medium text-muted-foreground;
+}
+
+.react-datepicker__day {
+  @apply m-1 flex h-8 w-8 items-center justify-center rounded-full text-foreground transition-colors;
+}
+
+.react-datepicker__day:hover {
+  @apply bg-primary text-black dark:text-primary-foreground;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+  @apply bg-primary text-primary-foreground;
+}
+
+.react-datepicker__day--selected:hover,
+.react-datepicker__day--in-selecting-range:hover,
+.react-datepicker__day--in-range:hover {
+  @apply bg-primary/90  ;
+}
+
+.react-datepicker__day--keyboard-selected {
+  @apply bg-accent text-accent-foreground;
+}
+
+.react-datepicker__day--disabled {
+  @apply text-muted-foreground/50;
+  cursor: not-allowed;
+}
+
+.react-datepicker__day--disabled:hover {
+  @apply bg-transparent;
+}
+
+.react-datepicker__day--outside-month {
+  @apply text-muted-foreground/50;
+}
+
+/* Time Picker Styles */
+.react-datepicker__time-container {
+  @apply w-36;
+}
+.react-datepicker__time-list-item {
+  @apply grid rounded-md text-foreground transition-colors;
+}
+.react-datepicker__time-list-item:hover {
+  @apply bg-primary text-black dark:text-primary-foreground;
+}
+
+.react-datepicker__time-list-item--selected {
+  @apply bg-primary font-semibold text-primary-foreground;
+}
+
+.react-datepicker__time-list-item--selected:hover {
+  @apply bg-primary/90 text-primary-foreground;
+}
+
+/* Mobile-specific styles for portal view */
+.react-datepicker-portal .react-datepicker__time-container {
+  @apply ml-0 w-full border-l-0 pl-0;
+}
+
+.react-datepicker-portal .react-datepicker__time-list {
+  @apply w-full pr-0;
+}
+
+/*! Fix for Firefox transparent background on time-only picker */
+.react-datepicker--time-only {
+  @apply bg-background;
+}
+
+/*NOTE:needed this because the default width introduces whitespaces */
+
+.react-datepicker__time-container
+.react-datepicker__time
+.react-datepicker__time-box
+{
+  @apply w-full;
+}
+/* INFO: hides the scrollbar overlayed on the container */
+.react-datepicker__time-list {
+  @apply items-center bg-background;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.react-datepicker__time-list::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
