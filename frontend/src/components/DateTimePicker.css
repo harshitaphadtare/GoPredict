@@ -77,24 +77,13 @@
   @apply text-muted-foreground/50;
 }
 
-.react-datepicker__navigation-icon--next{
-    @apply mr-6;
-}
-
 /* Time Picker Styles */
 .react-datepicker__time-container {
-  @apply ml-6 w-24 border-l border-border pl-3;
+  @apply w-36;
 }
-
-.react-datepicker__time-list {
-
-  @apply space-y-1 pr-1 bg-background;
-}
-
 .react-datepicker__time-list-item {
-  @apply flex h-8 items-center justify-center rounded-md text-foreground transition-colors;
+  @apply grid rounded-md text-foreground transition-colors;
 }
-
 .react-datepicker__time-list-item:hover {
   @apply bg-primary text-black dark:text-primary-foreground;
 }
@@ -105,4 +94,37 @@
 
 .react-datepicker__time-list-item--selected:hover {
   @apply bg-primary/90 text-primary-foreground;
+}
+
+/* Mobile-specific styles for portal view */
+.react-datepicker-portal .react-datepicker__time-container {
+  @apply ml-0 w-full border-l-0 pl-0;
+}
+
+.react-datepicker-portal .react-datepicker__time-list {
+  @apply w-full pr-0;
+}
+
+/*! Fix for Firefox transparent background on time-only picker */
+.react-datepicker--time-only {
+  @apply bg-background;
+}
+
+/*NOTE:needed this because the default width introduces whitespaces */
+
+.react-datepicker__time-container
+.react-datepicker__time
+.react-datepicker__time-box
+{
+  @apply w-full;
+}
+/* INFO: hides the scrollbar overlayed on the container */
+.react-datepicker__time-list {
+  @apply items-center bg-background;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.react-datepicker__time-list::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
 }
