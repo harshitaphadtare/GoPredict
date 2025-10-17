@@ -120,6 +120,7 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
   }, [clearTurnMarkers]);
 
   const fetchRoute = useCallback(async () => {
+    console.log(`[LeafletMap] Fetching route from ${from?.name ?? 'start'} to ${to?.name ?? 'end'}.`);
     if (!from || !to) return;
 
     const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
@@ -127,6 +128,7 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
       // Fallback to straight line if no API key
       if (mapRef.current) { // Guard against mapRef.current being null
         if (routeLayerRef.current) routeLayerRef.current.remove();
+        console.warn("[LeafletMap] No API key. Drawing a straight line as a fallback.");
         routeLayerRef.current = L.polyline([[from.lat, from.lon], [to.lat, to.lon]], { color: '#2563eb', weight: 3, opacity: 0.85 }).addTo(mapRef.current);
       }
       return;
@@ -138,35 +140,46 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
     if (routeLayerRef.current) routeLayerRef.current.remove();
 
     try {
-      const primaryRouteResponse = await fetch(
-        `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&format=geojson&waypoints.snapped=true&apiKey=${apiKey}`
-      );
+      const primaryRouteUrl = `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&format=geojson&waypoints.snapped=true&apiKey=${apiKey}`;
+      console.log("[LeafletMap] Primary API Request:", primaryRouteUrl);
+      const primaryRouteResponse = await fetch(primaryRouteUrl);
       let routeData = await primaryRouteResponse.json();
+      console.log("[LeafletMap] Primary API Response:", { status: primaryRouteResponse.status, ok: primaryRouteResponse.ok, data: routeData });
 
       if (routeData.statusCode === 400) {
-        console.warn("Initial routing failed. Attempting fallback with reverse geocoding.");
-        const fromPromise = fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${from.lat}&lon=${from.lon}&apiKey=${apiKey}`).then(res => res.json());
-        const toPromise = fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${to.lat}&lon=${to.lon}&apiKey=${apiKey}`).then(res => res.json());
+        console.warn("[LeafletMap] Initial routing failed (status 400). Attempting fallback with reverse geocoding.");
+        const fromRevUrl = `https://api.geoapify.com/v1/geocode/reverse?lat=${from.lat}&lon=${from.lon}&apiKey=${apiKey}`;
+        const toRevUrl = `https://api.geoapify.com/v1/geocode/reverse?lat=${to.lat}&lon=${to.lon}&apiKey=${apiKey}`;
+        console.log("[LeafletMap] Fallback Geocode Requests:", { from: fromRevUrl, to: toRevUrl });
+
+        const fromPromise = fetch(fromRevUrl).then(res => res.json());
+        const toPromise = fetch(toRevUrl).then(res => res.json());
         const [fromRev, toRev] = await Promise.all([fromPromise, toPromise]);
+        console.log("[LeafletMap] Fallback Geocode Responses:", { fromRev, toRev });
 
         const correctedFrom = fromRev?.features?.[0]?.properties;
         const correctedTo = toRev?.features?.[0]?.properties;
 
-        if (!correctedFrom || !correctedTo) throw new Error("Reverse geocoding failed.");
+        if (!correctedFrom || !correctedTo) {
+          console.error("[LeafletMap] Reverse geocoding failed for fallback.", { fromRev, toRev });
+          throw new Error("Reverse geocoding failed.");
+        }
 
-        const fallbackRouteResponse = await fetch(
-          `https://api.geoapify.com/v1/routing?waypoints=${correctedFrom.lat},${correctedFrom.lon}|${correctedTo.lat},${correctedTo.lon}&mode=drive&format=geojson&apiKey=${apiKey}`
-        );
+        const fallbackRouteUrl = `https://api.geoapify.com/v1/routing?waypoints=${correctedFrom.lat},${correctedFrom.lon}|${correctedTo.lat},${correctedTo.lon}&mode=drive&format=geojson&apiKey=${apiKey}`;
+        console.log("[LeafletMap] Fallback API Request:", fallbackRouteUrl);
+        const fallbackRouteResponse = await fetch(fallbackRouteUrl);
         if (!fallbackRouteResponse.ok) throw new Error(`Fallback routing failed.`);
         routeData = await fallbackRouteResponse.json();
+        console.log("[LeafletMap] Fallback API Response:", { status: fallbackRouteResponse.status, ok: fallbackRouteResponse.ok, data: routeData });
       }
 
-      if (!routeData?.features?.[0]) throw new Error("No route feature found.");
+      if (!routeData?.features?.[0]) throw new Error("No route feature found in API response.");
 
+      console.log("[LeafletMap] Route data received, starting animation.");
       animateRoute(routeData.features[0]);
     } catch (error) {
       if (error instanceof Error) {
-        console.error("Final routing error:", error.message);
+        console.error("[LeafletMap] Final routing error:", error);
         setRouteError(error.message);
       }
     } finally {
@@ -180,6 +193,7 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
   useEffect(() => {
     if (mapRef.current) return; // Initialize map only once
 
+    console.log("[LeafletMap] Initializing Leaflet map component.");
     mapRef.current = L.map('route-map', { zoomControl: true });
     const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
     const tileUrl = apiKey
@@ -193,6 +207,7 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
 
     // Cleanup function to remove map on component unmount
     return () => {
+      console.log("[LeafletMap] Cleaning up and removing map instance.");
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -202,6 +217,8 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+
+    console.log("[LeafletMap] Updating start/end markers and map view.");
 
     // Draw start/end markers
     markersRef.current.forEach(m => m.remove());
