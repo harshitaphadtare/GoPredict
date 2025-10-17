@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { List, Loader2 } from 'lucide-react'
+import {Loader2 } from 'lucide-react'
 
 
 // Fix for default markers not showing in bundled environments
@@ -32,6 +32,21 @@ const createCustomIcon = (color: string) => {
   })
 }
 
+// Create a small white dot icon for turn-by-turn markers
+const createTurnIcon = () => {
+  const markerHtml = `
+    <svg viewBox="0 0 12 12" width="12" height="12" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));">
+      <circle cx="6" cy="6" r="4" fill="#FFFFFF" stroke="#333333" stroke-width="1.5" />
+    </svg>`
+
+  return L.divIcon({
+    className: 'leaflet-turn-icon',
+    html: markerHtml,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+  })
+}
+
 export type GeoPoint = {
   name?: string
   lat: number
@@ -42,6 +57,7 @@ interface LeafletMapProps {
   from?: GeoPoint | null
   to?: GeoPoint | null
   animateKey?: string | number
+  isPredicting?: boolean
 }
 
 interface RouteStep {
@@ -50,7 +66,7 @@ interface RouteStep {
   }
 }
 
-export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
+export default function LeafletMap({ from, to, animateKey, isPredicting }: LeafletMapProps) {
   const [isRouteLoading, setIsRouteLoading] = useState(false)
   const [routeSteps, setRouteSteps] = useState<RouteStep[]>([])
 
@@ -65,7 +81,7 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
       : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 
 
-    
+
     const tiles = L.tileLayer(tileUrl, {
       maxZoom: 19,
       attribution:
@@ -77,6 +93,7 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
 
     let markers: L.Marker[] = []
     let routeLayer: L.Polyline | L.GeoJSON | null = null
+    let turnMarkers: L.Marker[] = []
 
     const fitBoundsIfNeeded = () => {
       const points: L.LatLngExpression[] = []
@@ -109,6 +126,11 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
       }
     }
 
+    const clearTurnMarkers = () => {
+      turnMarkers.forEach(m => m.remove())
+      turnMarkers = []
+    }
+
     const drawStraight = () => {
       if (!from || !to) return
       if (routeLayer) routeLayer.remove()
@@ -123,30 +145,54 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
 
     const animateRoute = (geoJsonData: any) => {
       if (routeLayer) routeLayer.remove();
+      clearTurnMarkers();
 
       const allCoords = geoJsonData.geometry.coordinates.flat(1).map((c: number[]) => L.latLng(c[1], c[0]));
       const animatedPolyline = L.polyline([], { color: '#2563eb', weight: 4, opacity: 0.95 }).addTo(map);
       routeLayer = animatedPolyline;
 
-      let i = 0;
-      const step = () => {
-        if (i < allCoords.length) {
-          animatedPolyline.addLatLng(allCoords[i]);
-          i++;
+      const animationDuration = 750; // Animate over 750ms
+      let startTime: number | null = null;
+
+      const step = (timestamp: number) => {
+        if (!startTime) {
+          startTime = timestamp;
+        }
+
+        const progress = Math.min((timestamp - startTime) / animationDuration, 1);
+        const pointsToShow = Math.floor(progress * allCoords.length);
+
+        // Only update if there are new points to show to avoid unnecessary re-renders
+        if (pointsToShow > animatedPolyline.getLatLngs().length) {
+          animatedPolyline.setLatLngs(allCoords.slice(0, pointsToShow));
+        }
+
+        if (progress < 1) {
           requestAnimationFrame(step);
         } else {
-          // Animation finished, bind the popup
+          animatedPolyline.setLatLngs(allCoords); // Ensure the full route is drawn
           const properties = geoJsonData.properties;
           if (properties) {
             const distanceKm = (properties.distance / 1000).toFixed(1);
             const timeMinutes = Math.round(properties.time / 60);
-            animatedPolyline.bindPopup(
-              `<b>Route Details</b><br>Distance: ${distanceKm} km<br>Est. Time: ${timeMinutes} minutes`
-            );
+            animatedPolyline.bindPopup(`<b>Route Details</b><br>Distance: ${distanceKm} km<br>Est. Time: ${timeMinutes} minutes`);
+          }
+
+          // Draw turn markers after animation is complete
+          const steps = geoJsonData.properties?.legs?.[0]?.steps;
+          if (steps && steps.length > 1) {
+            const turnIcon = createTurnIcon();
+            // Start from the second step to get the first turn coordinate
+            for (let i = 1; i < steps.length; i++) {
+              const turnIndex = steps[i].from_index;
+              if (turnIndex < allCoords.length) {
+                const turnMarker = L.marker(allCoords[turnIndex], { icon: turnIcon }).addTo(map);
+                turnMarkers.push(turnMarker);
+              }
+            }
           }
         }
       };
-
       requestAnimationFrame(step);
     };
 
@@ -158,9 +204,10 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
         return
       }
       setIsRouteLoading(true)
+      clearTurnMarkers()
       setRouteSteps([]) // Clear previous steps
       try {
-         //EXAMPLE:https://api.geoapify.com/v1/routing?waypoints=40.7757145,-73.87336398511545|40.6604335,-73.8302749&mode=drive&apiKey=YOUR_API_KEY
+        //EXAMPLE:https://api.geoapify.com/v1/routing?waypoints=40.7757145,-73.87336398511545|40.6604335,-73.8302749&mode=drive&apiKey=YOUR_API_KEY
         const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&format=geojson&apiKey=${apiKey}`
         console.log(url);
         const res = await fetch(url)
@@ -168,7 +215,7 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
         const data = await res.json()
         console.log('Geoapify route data:', data);
         if (!data?.features?.[0]) throw new Error('No route')
-        
+
         animateRoute(data.features[0]);
 
         // Extract and set turn-by-turn instructions
@@ -186,11 +233,11 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
     fitBoundsIfNeeded()
     // Always draw something quickly, then try to replace with routed geometry
     if (from && to) {
-      drawStraight()
       fetchRoute()
     }
 
     return () => {
+      clearTurnMarkers()
       map.remove()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,7 +248,11 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
       <div className="flex items-center justify-between border-b border-border px-4 py-3 text-sm text-foreground/70">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-2 w-2 rounded-full bg-primary" />
-          <span>Route Preview</span>
+          {isPredicting ? (
+            <span>Calculating route...</span>
+          ) : (
+            <span>Route Preview</span>
+          )}
         </div>
         {from && to ? (
           <span className="truncate">{from.name ?? 'Start'} → {to.name ?? 'End'}</span>
@@ -217,21 +268,7 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
           </div>
         )}
       </div>
-      {routeSteps.length > 0 && (
-        <div className="border-t border-border">
-          <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium">
-            <List className="h-4 w-4" />
-            <span>Turn-by-Turn Directions</span>
-          </div>
-          <ol className="max-h-48 overflow-y-auto list-decimal list-inside bg-background/50 px-4 pb-3 text-sm">
-            {routeSteps.map((step, index) => (
-              <li key={index} className="py-1.5 border-b border-border/50 last:border-b-0">
-                {step.instruction.text}
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
+
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { DateTimePicker } from "@/components/DateTimePicker";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
-import { Clock, MapPin, Car, Calendar, AlertTriangle ,Loader2} from "lucide-react";
+import { Clock, MapPin, Car, AlertTriangle ,Loader2} from "lucide-react";
 import Footer from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -50,20 +50,11 @@ export default function Home() {
   const [predicted, setPredicted] = useState<number | null>(null);
   const [animKey, setAnimKey] = useState(0);
 
-  const getInitialDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-  const [dateStr, setDateStr] = useState(getInitialDateTime());
   const [currentCity, setCurrentCity] = useState<"new_york" | "san_francisco">(
     "new_york"
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [isPredicting, setIsPredicting] = useState(false);
   const [warning, setWarning] = useState(""); // Add this line
 
   // Update city when location changes
@@ -118,6 +109,7 @@ export default function Home() {
     }
 
     setIsLoading(true);
+    setIsPredicting(true);
     const isMobile = window.innerWidth <= 768;
 
     // Validate that both locations are within the same city
@@ -131,6 +123,7 @@ export default function Home() {
         "Cross-city travel is not supported. Please select locations within the same city (New York or San Francisco)"
       );
       setIsLoading(false);
+      setIsPredicting(false);
       return;
     }
 
@@ -151,6 +144,7 @@ export default function Home() {
           setAnimKey((k) => k + 1);
         }
         setIsLoading(false);
+        setIsPredicting(false);
         return;
       }
     } catch (error) {
@@ -167,6 +161,7 @@ export default function Home() {
       setAnimKey((k) => k + 1);
     }
     setIsLoading(false);
+    setIsPredicting(false);
   };
 
   const resultRef = useRef<HTMLDivElement | null>(null);
@@ -359,6 +354,7 @@ export default function Home() {
                 from={fromLocation}
                 to={toLocation}
                 animateKey={`${animKey}-${fromLocation?.id}-${toLocation?.id}`}
+                isPredicting={isPredicting}
               />
             </motion.div>
           </div>
