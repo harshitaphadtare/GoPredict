@@ -11,9 +11,3 @@ export interface LeafletMapProps {
   animateKey?: string | number
   isPredicting?: boolean
 }
-
-export interface RouteStep {
-  instruction: {
-    text: string
-  }
-}

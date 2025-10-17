@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {Loader2 } from 'lucide-react'
-import { RouteStep,LeafletMapProps} from '@/types/LeafletMaps';
+import {LeafletMapProps} from '@/types/LeafletMaps';
 
 
 // Fix for default markers not showing in bundled environments
@@ -50,7 +50,6 @@ const createTurnIcon = () => {
 
 export default function LeafletMap({ from, to, animateKey, isPredicting }: LeafletMapProps) {
   const [isRouteLoading, setIsRouteLoading] = useState(false)
-  const [routeSteps, setRouteSteps] = useState<RouteStep[]>([])
   const [routeError, setRouteError] = useState<string | null>(null);
 
   // Refs to hold Leaflet instances, preventing re-initialization on re-renders
@@ -136,7 +135,6 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
     setIsRouteLoading(true);
     clearTurnMarkers();
     setRouteError(null);
-    setRouteSteps([]);
     if (routeLayerRef.current) routeLayerRef.current.remove();
 
     try {
@@ -166,7 +164,6 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
       if (!routeData?.features?.[0]) throw new Error("No route feature found.");
 
       animateRoute(routeData.features[0]);
-      setRouteSteps(routeData.features[0]?.properties?.legs?.[0]?.steps || []);
     } catch (error) {
       if (error instanceof Error) {
         console.error("Final routing error:", error.message);
