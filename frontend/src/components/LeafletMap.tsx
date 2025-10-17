@@ -69,6 +69,7 @@ interface RouteStep {
 export default function LeafletMap({ from, to, animateKey, isPredicting }: LeafletMapProps) {
   const [isRouteLoading, setIsRouteLoading] = useState(false)
   const [routeSteps, setRouteSteps] = useState<RouteStep[]>([])
+  const [routeError, setRouteError] = useState<string | null>(null);
 
   useEffect(() => {
     const map = L.map('route-map', {
@@ -147,50 +148,73 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
       if (routeLayer) routeLayer.remove();
       clearTurnMarkers();
 
+      //NOTE: the geoJson array coordinate pair [lon, lat] is  converted into a Leaflet LatLng object [lat, lon].
       const allCoords = geoJsonData.geometry.coordinates.flat(1).map((c: number[]) => L.latLng(c[1], c[0]));
+      
+      // Create an empty polyline (a line with multiple points). This is what we will "draw" on.
+      // We'll add coordinates to it over time to create the animation effect.
       const animatedPolyline = L.polyline([], { color: '#2563eb', weight: 4, opacity: 0.95 }).addTo(map);
-      routeLayer = animatedPolyline;
+      routeLayer = animatedPolyline; // Keep a reference to it so we can remove it later.
 
-      const animationDuration = 750; // Animate over 750ms
+      // --- Prepare Turn Markers ---
+      // The route data also includes "steps" (like "turn left," "go straight").
+      // We extract the coordinate index for each turn.
+      const steps = geoJsonData.properties?.legs?.[0]?.steps;
+      const turnPoints = (steps && steps.length > 1)
+        // We skip the first step (the start) and map over the rest.
+        ? steps.slice(1).map((step: any) => ({
+            // `from_index` tells us which point in `allCoords` corresponds to the start of this turn.
+            index: step.from_index,
+            // We get the actual LatLng object for that index.
+            latlng: allCoords[step.from_index],
+          })).filter((turn: any) => turn.latlng) // Make sure the coordinate exists.
+        : [];
+
+      // --- Animation Setup ---
+      let nextTurnIndex = 0; // This will track which turn marker we need to draw next.
+      const turnIcon = createTurnIcon(); // A small white dot icon for the turns.
+      const animationDuration = 750; // We want the animation to last 750 milliseconds.
       let startTime: number | null = null;
 
+      // The `step` function is the core of our animation. It will be called on every frame.
       const step = (timestamp: number) => {
+        // On the very first frame, record the start time.
         if (!startTime) {
           startTime = timestamp;
         }
 
+        // Calculate how much time has passed since the animation started.
+        // `progress` will be a value from 0 (start) to 1 (end).
         const progress = Math.min((timestamp - startTime) / animationDuration, 1);
+        
+        // Based on the progress, calculate how many points of the route line should be visible.
         const pointsToShow = Math.floor(progress * allCoords.length);
 
-        // Only update if there are new points to show to avoid unnecessary re-renders
+        // To avoid unnecessary work, we only update the map if new points need to be drawn.
         if (pointsToShow > animatedPolyline.getLatLngs().length) {
+          // Update the polyline to show the new segment of the route.
           animatedPolyline.setLatLngs(allCoords.slice(0, pointsToShow));
+
+          // --- Synchronized Turn Marker Drawing ---
+          // This loop checks if the line has reached or passed the next turn point.
+          while (nextTurnIndex < turnPoints.length && turnPoints[nextTurnIndex].index <= pointsToShow) {
+            // If it has, we get the turn's data...
+            const turn = turnPoints[nextTurnIndex];
+            // ...add a marker to the map at that turn's location...
+            turnMarkers.push(L.marker(turn.latlng, { icon: turnIcon }).addTo(map));
+            // ...and move on to the next turn in our list.
+            nextTurnIndex++;
+          }
         }
 
+        // If the animation is not yet finished (progress < 1), we request the next frame.
+        // This creates a smooth loop.
         if (progress < 1) {
           requestAnimationFrame(step);
         } else {
-          animatedPolyline.setLatLngs(allCoords); // Ensure the full route is drawn
-          const properties = geoJsonData.properties;
-          if (properties) {
-            const distanceKm = (properties.distance / 1000).toFixed(1);
-            const timeMinutes = Math.round(properties.time / 60);
-            animatedPolyline.bindPopup(`<b>Route Details</b><br>Distance: ${distanceKm} km<br>Est. Time: ${timeMinutes} minutes`);
-          }
-
-          // Draw turn markers after animation is complete
-          const steps = geoJsonData.properties?.legs?.[0]?.steps;
-          if (steps && steps.length > 1) {
-            const turnIcon = createTurnIcon();
-            // Start from the second step to get the first turn coordinate
-            for (let i = 1; i < steps.length; i++) {
-              const turnIndex = steps[i].from_index;
-              if (turnIndex < allCoords.length) {
-                const turnMarker = L.marker(allCoords[turnIndex], { icon: turnIcon }).addTo(map);
-                turnMarkers.push(turnMarker);
-              }
-            }
-          }
+          // --- Animation Finished ---
+          // Once the animation is complete, ensure the entire route is drawn.
+          animatedPolyline.setLatLngs(allCoords);
         }
       };
       requestAnimationFrame(step);
@@ -205,13 +229,15 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
       }
       setIsRouteLoading(true)
       clearTurnMarkers()
+      setRouteError(null); // Clear previous errors
       setRouteSteps([]) // Clear previous steps
+      if (routeLayer) routeLayer.remove(); // Clear previous route before fetching
       try {
-        //EXAMPLE:https://api.geoapify.com/v1/routing?waypoints=40.7757145,-73.87336398511545|40.6604335,-73.8302749&mode=drive&apiKey=YOUR_API_KEY
-        const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&format=geojson&apiKey=${apiKey}`
+        // Use waypoints.snapped=true to find the nearest routable point for each coordinate
+        const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&format=geojson&waypoints.snapped=true&apiKey=${apiKey}`
         console.log(url);
         const res = await fetch(url)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        if (!res.ok) throw new Error(`Could not find a routable path. (HTTP ${res.status})`)
         const data = await res.json()
         console.log('Geoapify route data:', data);
         if (!data?.features?.[0]) throw new Error('No route')
@@ -222,8 +248,10 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
         if (data.features[0]?.properties?.legs?.[0]?.steps) {
           setRouteSteps(data.features[0].properties.legs[0].steps)
         }
-      } catch {
-        drawStraight()
+      } catch (error) {
+        if (error instanceof Error) {
+          setRouteError(error.message);
+        }
       } finally {
         setIsRouteLoading(false)
       }
@@ -231,7 +259,7 @@ export default function LeafletMap({ from, to, animateKey, isPredicting }: Leafl
 
     drawMarkers()
     fitBoundsIfNeeded()
-    // Always draw something quickly, then try to replace with routed geometry
+    
     if (from && to) {
       fetchRoute()
     }
