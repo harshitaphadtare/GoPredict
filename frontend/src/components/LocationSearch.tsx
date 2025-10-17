@@ -16,7 +16,7 @@ interface LocationSearchProps {
   label: string;
   value: string;
   onChange: (val: string) => void;
-  onLocationSelect: (location: Location) => void;
+  onLocationSelect: (location: Location | null) => void;
   selectedLocation?: Location | null;
   placeholder?: string;
   className?: string;
@@ -46,7 +46,13 @@ const SF_LOCATIONS: Location[] = [
   { id: "sf_mission", name: "Mission District, SF", lat: 37.7599, lon: -122.4148 },
   { id: "sf_soma", name: "SoMa, SF", lat: 37.7749, lon: -122.4194 },
   { id: "sf_marina", name: "Marina District, SF", lat: 37.8024, lon: -122.4368 },
-  { id: "sf_sfo_airport", name: "SFO Airport, SF", lat: 37.6213, lon: -122.3790 },
+//? Wrong data possibly  { id: "sf_sfo_airport", name: "SFO Airport, SF", lat: 37.6213, lon: -122.3790 },
+{ id: "sf_sfo_airport", name: "SFO Airport, SF", lat: 37.6163, lon: -122.3863 }, //! had coorinates of runway which is not publicaly accessible
+  
+  
+  
+  
+  
   { id: "sf_oakland_airport", name: "Oakland Airport, SF", lat: 37.7126, lon: -122.2196 },
 ];
 
@@ -109,7 +115,7 @@ export function LocationSearch({
     
     // If user clears the input, clear the selected location
     if (!newValue.trim()) {
-      onLocationSelect(null as any);
+      onLocationSelect(null);
     }
   };
 
@@ -174,7 +180,7 @@ export function LocationSearch({
               className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 p-0"
               onClick={() => {
                 onChange('');
-                onLocationSelect(null as any);
+                onLocationSelect(null);
               }}
             >
               ×
@@ -200,7 +206,7 @@ export function LocationSearch({
                   <div>
                     <div className="text-sm font-medium">{location.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
+                      {location.lat.toFixed(8)}, {location.lon.toFixed(8)}
                     </div>
                   </div>
                 </button>

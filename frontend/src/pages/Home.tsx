@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { LocationSearch } from "@/components/LocationSearch";
 import LeafletMap from "@/components/LeafletMap";
-import { DateTimePicker } from "@/components/DateTimePicker";
+import { DateTimePicker } from "@/components/DateTimePicker/DateTimePicker";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { predictTravelTime } from "@/lib/api";
@@ -143,25 +143,22 @@ export default function Home() {
         } else {
           setAnimKey((k) => k + 1);
         }
-        setIsLoading(false);
-        setIsPredicting(false);
         return;
       }
     } catch (error) {
       console.error("Prediction API error:", error);
+      // Clear previous prediction if API fails, so fallback is used or it's reset
+      setPredicted(null);
+    } finally {
+      // Fallback calculation if prediction is still null after API call
+      if (predicted === null) {
+        const km = haversineKm(fromLocation, toLocation);
+        const minutes = estimateMinutes(km, travelDate);
+        setPredicted(minutes);
+      }
+      setIsLoading(false);
+      setIsPredicting(false);
     }
-
-    // Fallback calculation
-    const km = haversineKm(fromLocation, toLocation);
-    const minutes = estimateMinutes(km, travelDate);
-    setPredicted(minutes);
-    if (isMobile) {
-      setTimeout(() => setAnimKey((k) => k + 1), 900);
-    } else {
-      setAnimKey((k) => k + 1);
-    }
-    setIsLoading(false);
-    setIsPredicting(false);
   };
 
   const resultRef = useRef<HTMLDivElement | null>(null);
