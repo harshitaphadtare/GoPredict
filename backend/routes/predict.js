@@ -59,11 +59,15 @@ function estimateTravelTime(distanceKm, startTime, city) {
   return minutes > 5 ? minutes : 5;
 }
 
+// This file now exclusively serves as an Express route handler for local development or a traditional server.
 export const predictRoute = (req, res) => {
+  const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  console.log(`[predict.js] [${requestId}] Received prediction request.`);
   try {
     const { from, to, startTime, city } = req.body || {};
 
     if (!from || !to || !startTime || !city) {
+      console.warn(`[predict.js] [${requestId}] Bad Request: Missing required fields. Body:`, req.body);
       return res.status(400).json({ error: 'Missing required fields: from, to, startTime, city' });
     }
 
@@ -73,6 +77,7 @@ export const predictRoute = (req, res) => {
       from.lat < -90 || from.lat > 90 || to.lat < -90 || to.lat > 90 ||
       from.lon < -180 || from.lon > 180 || to.lon < -180 || to.lon > 180
     ) {
+      console.warn(`[predict.js] [${requestId}] Bad Request: Invalid coordinates. From:`, from, "To:", to);
       return res.status(400).json({ error: 'Invalid coordinates' });
     }
 
@@ -81,9 +86,11 @@ export const predictRoute = (req, res) => {
     const cacheKey = createCacheKey(from, to, startTime, cityKey);
     const cached = predictionCache.get(cacheKey);
     if (cached !== undefined) {
+      console.log(`[predict.js] [${requestId}] Cache HIT for key: ${cacheKey}`);
       return res.json({ ...cached, cached: true });
     }
 
+    console.log(`[predict.js] [${requestId}] Cache MISS for key: ${cacheKey}. Calculating new prediction.`);
     const distanceKm = calculateDistance(from.lat, from.lon, to.lat, to.lon);
     const minutes = estimateTravelTime(distanceKm, startTime, cityKey);
 
@@ -98,9 +105,11 @@ export const predictRoute = (req, res) => {
     };
 
     predictionCache.set(cacheKey, prediction);
+    console.log(`[predict.js] [${requestId}] Prediction successful. Result:`, prediction);
     return res.json({ ...prediction, cached: false });
   } catch (error) {
-    console.error('Prediction error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[predict.js] [${requestId}] Prediction error: ${errorMessage}`, { error });
     return res.status(500).json({
       error: 'Internal server error',
       message: error?.message ?? String(error),

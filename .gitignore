@@ -109,3 +109,5 @@ frontend/.vite-temp/
 # Project specific
 notebooks/gmaps/
 data/processed/
+.bak
+/netlify

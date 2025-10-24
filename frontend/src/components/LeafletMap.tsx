@@ -1,6 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import {Loader2 } from 'lucide-react'
+import {LeafletMapProps} from '@/types/LeafletMaps';
 
 
 // Fix for default markers not showing in bundled environments
@@ -31,131 +33,242 @@ const createCustomIcon = (color: string) => {
   })
 }
 
-export type GeoPoint = {
-  name?: string
-  lat: number
-  lon: number
+// Create a small white dot icon for turn-by-turn markers
+const createTurnIcon = () => {
+  const markerHtml = `
+    <svg viewBox="0 0 12 12" width="12" height="12" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));">
+      <circle cx="6" cy="6" r="4" fill="#FFFFFF" stroke="#333333" stroke-width="1.5" />
+    </svg>`
+
+  return L.divIcon({
+    className: 'leaflet-turn-icon',
+    html: markerHtml,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+  })
 }
 
-interface LeafletMapProps {
-  from?: GeoPoint | null
-  to?: GeoPoint | null
-  animateKey?: string | number
-}
+export default function LeafletMap({ from, to, animateKey, isPredicting }: LeafletMapProps) {
+  const [isRouteLoading, setIsRouteLoading] = useState(false)
+  const [routeError, setRouteError] = useState<string | null>(null);
 
-export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
+  // Refs to hold Leaflet instances, preventing re-initialization on re-renders
+  const mapRef = useRef<L.Map | null>(null);
+  const routeLayerRef = useRef<L.Polyline | L.GeoJSON | null>(null);
+  const markersRef = useRef<L.Marker[]>([]);
+  const turnMarkersRef = useRef<L.Marker[]>([]);
+
+  // --- Map Drawing and Animation Functions (SRP) ---
+
+  const clearTurnMarkers = useCallback(() => {
+    turnMarkersRef.current.forEach(m => m.remove());
+    turnMarkersRef.current = [];
+  }, []);
+
+  const animateRoute = useCallback((geoJsonData: any) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (routeLayerRef.current) routeLayerRef.current.remove();
+    clearTurnMarkers();
+
+    const allCoords = geoJsonData.geometry.coordinates.flat(1).map((c: number[]) => L.latLng(c[1], c[0]));
+    const animatedPolyline = L.polyline([], { color: '#2563eb', weight: 4, opacity: 0.95 }).addTo(map);
+    routeLayerRef.current = animatedPolyline;
+
+    const steps = geoJsonData.properties?.legs?.[0]?.steps;
+    const turnPoints = (steps && steps.length > 1)
+      ? steps.slice(1).map((step: any) => ({
+          index: step.from_index,
+          latlng: allCoords[step.from_index],
+        })).filter((turn: any) => turn.latlng)
+      : [];
+
+    let nextTurnIndex = 0;
+    const turnIcon = createTurnIcon();
+    const animationDuration = 750;
+    let startTime: number | null = null;
+
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / animationDuration, 1);
+      const pointsToShow = Math.floor(progress * allCoords.length);
+
+      if (pointsToShow > animatedPolyline.getLatLngs().length) {
+        animatedPolyline.setLatLngs(allCoords.slice(0, pointsToShow));
+
+        while (nextTurnIndex < turnPoints.length && turnPoints[nextTurnIndex].index <= pointsToShow) {
+          const turn = turnPoints[nextTurnIndex];
+          turnMarkersRef.current.push(L.marker(turn.latlng, { icon: turnIcon }).addTo(map));
+          nextTurnIndex++;
+        }
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        animatedPolyline.setLatLngs(allCoords);
+        const properties = geoJsonData.properties;
+        if (properties) {
+          const distanceKm = (properties.distance / 1000).toFixed(1);
+          const timeMinutes = Math.round(properties.time / 60);
+          animatedPolyline.bindPopup(`<b>Route Details</b><br>Distance: ${distanceKm} km<br>Est. Time: ${timeMinutes} minutes`);
+        }
+      }
+    };
+    requestAnimationFrame(step);
+  }, [clearTurnMarkers]);
+
+  const fetchRoute = useCallback(async () => {
+    console.log(`[LeafletMap] Fetching route from ${from?.name ?? 'start'} to ${to?.name ?? 'end'}.`);
+    if (!from || !to) return;
+
+    const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
+    if (!apiKey) {
+      // Fallback to straight line if no API key
+      if (mapRef.current) { // Guard against mapRef.current being null
+        if (routeLayerRef.current) routeLayerRef.current.remove();
+        console.warn("[LeafletMap] No API key. Drawing a straight line as a fallback.");
+        routeLayerRef.current = L.polyline([[from.lat, from.lon], [to.lat, to.lon]], { color: '#2563eb', weight: 3, opacity: 0.85 }).addTo(mapRef.current);
+      }
+      return;
+    }
+
+    setIsRouteLoading(true);
+    clearTurnMarkers();
+    setRouteError(null);
+    if (routeLayerRef.current) routeLayerRef.current.remove();
+
+    try {
+      const primaryRouteUrl = `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&format=geojson&waypoints.snapped=true&apiKey=${apiKey}`;
+      console.log("[LeafletMap] Primary API Request:", primaryRouteUrl);
+      const primaryRouteResponse = await fetch(primaryRouteUrl);
+      let routeData = await primaryRouteResponse.json();
+      console.log("[LeafletMap] Primary API Response:", { status: primaryRouteResponse.status, ok: primaryRouteResponse.ok, data: routeData });
+
+      if (routeData.statusCode === 400) {
+        console.warn("[LeafletMap] Initial routing failed (status 400). Attempting fallback with reverse geocoding.");
+        const fromRevUrl = `https://api.geoapify.com/v1/geocode/reverse?lat=${from.lat}&lon=${from.lon}&apiKey=${apiKey}`;
+        const toRevUrl = `https://api.geoapify.com/v1/geocode/reverse?lat=${to.lat}&lon=${to.lon}&apiKey=${apiKey}`;
+        console.log("[LeafletMap] Fallback Geocode Requests:", { from: fromRevUrl, to: toRevUrl });
+
+        const fromPromise = fetch(fromRevUrl).then(res => res.json());
+        const toPromise = fetch(toRevUrl).then(res => res.json());
+        const [fromRev, toRev] = await Promise.all([fromPromise, toPromise]);
+        console.log("[LeafletMap] Fallback Geocode Responses:", { fromRev, toRev });
+
+        const correctedFrom = fromRev?.features?.[0]?.properties;
+        const correctedTo = toRev?.features?.[0]?.properties;
+
+        if (!correctedFrom || !correctedTo) {
+          console.error("[LeafletMap] Reverse geocoding failed for fallback.", { fromRev, toRev });
+          throw new Error("Reverse geocoding failed.");
+        }
+
+        const fallbackRouteUrl = `https://api.geoapify.com/v1/routing?waypoints=${correctedFrom.lat},${correctedFrom.lon}|${correctedTo.lat},${correctedTo.lon}&mode=drive&format=geojson&apiKey=${apiKey}`;
+        console.log("[LeafletMap] Fallback API Request:", fallbackRouteUrl);
+        const fallbackRouteResponse = await fetch(fallbackRouteUrl);
+        if (!fallbackRouteResponse.ok) throw new Error(`Fallback routing failed.`);
+        routeData = await fallbackRouteResponse.json();
+        console.log("[LeafletMap] Fallback API Response:", { status: fallbackRouteResponse.status, ok: fallbackRouteResponse.ok, data: routeData });
+      }
+
+      if (!routeData?.features?.[0]) throw new Error("No route feature found in API response.");
+
+      console.log("[LeafletMap] Route data received, starting animation.");
+      animateRoute(routeData.features[0]);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("[LeafletMap] Final routing error:", error);
+        setRouteError(error.message);
+      }
+    } finally {
+      setIsRouteLoading(false);
+    }
+  }, [from, to, animateRoute, clearTurnMarkers]);
+
+  // --- useEffect Hooks for Lifecycle Management ---
+
+  // Effect for map initialization (runs once)
   useEffect(() => {
-    const map = L.map('route-map', {
-      zoomControl: true,
-    })
+    if (mapRef.current) return; // Initialize map only once
 
-    const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY
+    console.log("[LeafletMap] Initializing Leaflet map component.");
+    mapRef.current = L.map('route-map', { zoomControl: true });
+    const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
     const tileUrl = apiKey
       ? `https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${apiKey}`
-      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-
-    
-    const tiles = L.tileLayer(tileUrl, {
+    L.tileLayer(tileUrl, {
       maxZoom: 19,
-      attribution:
-        apiKey
-          ? '© OpenMapTiles © OpenStreetMap contributors | © Geoapify'
-          : '© OpenStreetMap contributors',
-    })
-    tiles.addTo(map)
+      attribution: apiKey ? '© OpenMapTiles © OpenStreetMap contributors | © Geoapify' : '© OpenStreetMap contributors',
+    }).addTo(mapRef.current);
 
-    let markers: L.Marker[] = []
-    let routeLayer: L.Polyline | L.GeoJSON | null = null
-
-    const fitBoundsIfNeeded = () => {
-      const points: L.LatLngExpression[] = []
-      if (from) points.push([from.lat, from.lon])
-      if (to) points.push([to.lat, to.lon])
-      if (points.length) {
-        const bounds = L.latLngBounds(points)
-        map.fitBounds(bounds.pad(0.25))
-      } else {
-        map.setView([40.7128, -74.006], 11)
-      }
-    }
-
-    const drawMarkers = () => {
-      markers.forEach(m => m.remove())
-      markers = []
-      if (from) {
-        const startMarker = L.marker([from.lat, from.lon], {
-          icon: createCustomIcon('#2563eb'), // Blue pin for start
-        }).addTo(map)
-        startMarker.bindPopup(`<b>Start:</b> ${from.name || 'Start Location'}`)
-        markers.push(startMarker)
-      }
-      if (to) {
-        const endMarker = L.marker([to.lat, to.lon], {
-          icon: createCustomIcon('#ef4444'), // Red pin for end
-        }).addTo(map)
-        endMarker.bindPopup(`<b>End:</b> ${to.name || 'End Location'}`)
-        markers.push(endMarker)
-      }
-    }
-
-    const drawStraight = () => {
-      if (!from || !to) return
-      if (routeLayer) routeLayer.remove()
-      routeLayer = L.polyline(
-        [
-          [from.lat, from.lon],
-          [to.lat, to.lon],
-        ],
-        { color: '#2563eb', weight: 3, opacity: 0.85 }
-      ).addTo(map)
-    }
-
-    const fetchRoute = async () => {
-      if (!from || !to) return
-      const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY
-      if (!apiKey) {
-        drawStraight()
-        return
-      }
-      try {
-         //EXAMPLE:https://api.geoapify.com/v1/routing?waypoints=40.7757145,-73.87336398511545|40.6604335,-73.8302749&mode=drive&apiKey=YOUR_API_KEY
-        const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&format=geojson&apiKey=${apiKey}`
-        console.log(url);
-        const res = await fetch(url)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data = await res.json()
-        console.log('Geoapify route data:', data);
-        if (!data?.features?.[0]) throw new Error('No route')
-        if (routeLayer) routeLayer.remove()
-        routeLayer = L.geoJSON(data.features[0], {
-          style: { color: '#2563eb', weight: 4, opacity: 0.95 },
-        }).addTo(map)
-      } catch {
-        drawStraight()
-      }
-    }
-
-    drawMarkers()
-    fitBoundsIfNeeded()
-    // Always draw something quickly, then try to replace with routed geometry
-    if (from && to) {
-      drawStraight()
-      fetchRoute()
-    }
-
+    // Cleanup function to remove map on component unmount
     return () => {
-      map.remove()
+      console.log("[LeafletMap] Cleaning up and removing map instance.");
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // Effect for updating markers and view when 'from' or 'to' change
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    console.log("[LeafletMap] Updating start/end markers and map view.");
+
+    // Draw start/end markers
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+    if (from) {
+      const startMarker = L.marker([from.lat, from.lon], { icon: createCustomIcon('#2563eb') }).addTo(map);
+      startMarker.bindPopup(`<b>Start:</b> ${from.name || 'Start Location'}`);
+      markersRef.current.push(startMarker);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from?.lat, from?.lon, to?.lat, to?.lon, animateKey])
+    if (to) {
+      const endMarker = L.marker([to.lat, to.lon], { icon: createCustomIcon('#ef4444') }).addTo(map);
+      endMarker.bindPopup(`<b>End:</b> ${to.name || 'End Location'}`);
+      markersRef.current.push(endMarker);
+    }
+
+    // Adjust map view
+    const points: L.LatLngExpression[] = [];
+    if (from) points.push([from.lat, from.lon]);
+    if (to) points.push([to.lat, to.lon]);
+
+    if (points.length > 0) {
+      map.fitBounds(L.latLngBounds(points).pad(0.25));
+    } else {
+      map.setView([40.7128, -74.006], 11); // Default view
+    }
+  }, [from, to]);
+
+  // Effect for fetching and drawing the route
+  useEffect(() => {
+    if (from && to) {
+      fetchRoute();
+    } else {
+      // Clear route if 'from' or 'to' is missing
+      if (routeLayerRef.current) routeLayerRef.current.remove();
+      clearTurnMarkers();
+    }
+  }, [from, to, animateKey, fetchRoute, clearTurnMarkers]);
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-border bg-card/90 shadow-soft backdrop-blur">
+    <div className="flex flex-col w-full overflow-hidden rounded-2xl border border-border bg-card/90 shadow-soft backdrop-blur">
       <div className="flex items-center justify-between border-b border-border px-4 py-3 text-sm text-foreground/70">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-2 w-2 rounded-full bg-primary" />
-          <span>Route Preview</span>
+          {isPredicting ? (
+            <span>Calculating route...</span>
+          ) : (
+            routeError ? 
+            <span className="text-red-500">Route not found</span> :
+            <span>Route Preview</span>
+          )}
         </div>
         {from && to ? (
           <span className="truncate">{from.name ?? 'Start'} → {to.name ?? 'End'}</span>
@@ -163,7 +276,15 @@ export default function LeafletMap({ from, to, animateKey }: LeafletMapProps) {
           <span className="truncate">Select locations to preview</span>
         )}
       </div>
-      <div id="route-map" style={{ height: 360, width: '100%' }} />
+      <div className="relative">
+        <div id="route-map" style={{ height: 360, width: '100%' }} />
+        {isRouteLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+            <Loader2 className="h-10 w-10 animate-spin text-white" />
+          </div>
+        )}
+      </div>
+
     </div>
   )
 }

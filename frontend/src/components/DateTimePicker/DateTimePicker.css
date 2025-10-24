@@ -128,3 +128,31 @@
 .react-datepicker__time-list::-webkit-scrollbar {
   display: none; /* Safari and Chrome */
 }
+
+/* Center the datepicker on small screens */
+@media (max-width: 480px) {
+  .react-datepicker-portal {
+    @apply fixed inset-0 z-30 flex items-center justify-center bg-black/50;
+  }
+  .react-datepicker-portal .react-datepicker-popper {
+    /* Reset popper.js inline styles to allow flex centering */
+    @apply static transform-none;
+  }
+
+  /* Reduce calendar size on mobile */
+  .react-datepicker {
+    @apply p-1;
+  }
+  .react-datepicker__header {
+    @apply p-1;
+  }
+  .react-datepicker__current-month {
+    @apply text-sm;
+  }
+  .react-datepicker__day-name {
+    @apply m-0.5 w-7;
+  }
+  .react-datepicker__day {
+    @apply m-0.5 h-7 w-7;
+  }
+}
