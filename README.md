@@ -4,7 +4,11 @@ A comprehensive machine learning pipeline for predicting trip durations using va
 
 **Medium post**: https://medium.com/@hphadtare02/how-machine-learning-predicts-trip-duration-just-like-uber-zomato-91f7db6e9ce9
 
-## 📁 Project Structure
+## Demo
+
+https://github.com/user-attachments/assets/f3e1078a-28d6-44e3-a69a-db3a73587c80
+
+## Project Structure
 
 ```
 GoPredict/
@@ -64,7 +68,7 @@ GoPredict/
 └── logs/                          # Log files (auto-created)
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Installation
 
@@ -106,7 +110,7 @@ npm install
 npm run dev
 ```
 
-## 🔌 API Documentation
+## API Documentation
 
 The GoPredict API provides REST endpoints for machine learning-based trip duration prediction using FastAPI.
 
@@ -274,7 +278,7 @@ const prediction = await predictTravelTime({
 });
 ```
 
-## 🎯 ML Pipeline Usage
+## ML Pipeline Usage
 
 ### Simple Pipeline (Default)
 
@@ -339,7 +343,7 @@ Edit `config.py` to customize:
 - Hyperparameter tuning ranges
 - Logging settings
 
-## 📝 Usage Examples
+## Usage Examples
 
 ### Basic Usage
 
@@ -377,7 +381,7 @@ submission = to_submission(predictions, test_df)
 submission.to_csv('my_submission.csv', index=False)
 ```
 
-## 🧪 Testing
+## Testing
 
 ### API Testing
 
@@ -394,7 +398,7 @@ npm run test
 npm run test:coverage
 ```
 
-## 📊 Available Models
+## Available Models
 
 - **LINREG** - Linear Regression
 - **RIDGE** - Ridge Regression
@@ -404,14 +408,14 @@ npm run test:coverage
 - **RF** - Random Forest
 - **NN** - Neural Network
 
-## 🤝 Contributing
+## ontributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and frontend integration details.
 
-## 📋 Code of Conduct
+## Code of Conduct
 
 See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for our community guidelines and security policies.
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
