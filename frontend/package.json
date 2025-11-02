@@ -17,10 +17,13 @@
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "firebase": "^12.4.0",
     "framer-motion": "^12.23.22",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.539.0",
     "next-themes": "^0.4.6",
+    "path": "^0.12.7",
     "react": "^18.3.1",
     "react-datepicker": "^8.8.0",
     "react-dom": "^18.3.1",
@@ -28,21 +31,21 @@
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
     "@types/leaflet": "^1.9.21",
     "@types/react": "^18.3.23",
     "@types/react-datepicker": "^7.0.0",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-v8": "^2.0.0",
     "autoprefixer": "^10.4.21",
+    "jsdom": "^24.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.2",
     "vite": "7.1.9",
-    "vitest": "^2.0.0",
-    "@vitest/coverage-v8": "^2.0.0",
-    "jsdom": "^24.0.0",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/jest-dom": "^6.0.0"
+    "vitest": "^2.0.0"
   }
 }
