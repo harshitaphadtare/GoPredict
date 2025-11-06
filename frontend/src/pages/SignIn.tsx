@@ -7,12 +7,11 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   GithubAuthProvider,
-  // --- 1. Import the function to check email ---
   fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { auth } from '../firebase';
 import { motion } from 'framer-motion';
-import { Car } from 'lucide-react';
+import { Car, Eye, EyeOff } from 'lucide-react'; // Import Eye and EyeOff icons
 import { ThemeToggle } from '../components/ui/theme-toggle';
 
 // --- SVG Icons (Google, GitHub) ---
@@ -34,12 +33,12 @@ const IconGitHub = () => (
 const SignIn: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    // ... (This function remains the same)
     e.preventDefault();
     setError(null);
     setIsLoading(true);
@@ -71,13 +70,10 @@ const SignIn: React.FC = () => {
       await signInWithPopup(auth, provider);
       navigate('/');
     } catch (err: any) {
-      // --- 2. Add the GitHub error handling logic ---
       if (err.code === 'auth/account-exists-with-different-credential') {
         const email = err.customData?.email;
         if (email) {
-          // Find out which provider is linked to that email
           const methods = await fetchSignInMethodsForEmail(auth, email);
-          // Capitalize the provider name for the error message
           const provider = methods[0].charAt(0).toUpperCase() + methods[0].slice(1).split('.')[0];
           setError(`This email is already linked to an account with ${provider}. Please sign in using ${provider}.`);
         } else {
@@ -179,13 +175,17 @@ const SignIn: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between">
                   <label htmlFor="password" className="text-sm font-medium">Password</label>
-                  <Link to="#" className="text-sm font-medium text-primary hover:underline">
-                    Forgot Password?
-                  </Link>
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-primary hover:underline"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4 inline" /> : <Eye className="h-4 w-4 inline" />}
+                  </button>
                 </div>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'} // Toggle between 'text' and 'password'
                   required
                   className="mt-1"
                   value={password}
