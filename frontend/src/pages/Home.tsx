@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { LocationSearch } from "@/components/LocationSearch";
-import LeafletMap from "@/components/LeafletMap";
-import { DateTimePicker } from "@/components/DateTimePicker";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { predictTravelTime } from "@/lib/api";
+import { LocationSearch } from "../components/LocationSearch"; // Relative path
+import LeafletMap from "../components/LeafletMap"; // Relative path
+import { DateTimePicker } from "../components/DateTimePicker"; // Relative path
+import { Button } from "../components/ui/button"; // Relative path
+import { ThemeToggle } from "../components/ui/theme-toggle"; // Relative path
+import { predictTravelTime } from "../lib/api"; // Relative path
 import { Clock, MapPin, Car } from "lucide-react";
-import Footer from "@/components/Footer";
+import Footer from "../components/Footer"; // Relative path
 import { motion, AnimatePresence } from "framer-motion";
-// --- 1. Import Link, auth tools, and auth hook ---
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/AuthContext"; // Use the Auth hook
-import { auth } from "@/firebase"; // Import auth service
-import { signOut } from "firebase/auth"; // Import signOut function
+// --- 1. Import Link, auth hook, and NEW UserNav ---
+import { Link } from "react-router-dom";
+import { useAuth } from "../AuthContext"; // Relative path
+import { UserNav } from "../components/UserNav"; // Relative path
+// --- Removed auth, signOut, useNavigate ---
 
 type Location = {
   id: string;
@@ -22,11 +22,11 @@ type Location = {
 };
 
 export default function Home() {
-  // --- 2. Get auth state and navigation ---
+  // --- 2. Get auth state ---
   const { user } = useAuth(); // Get the current user
-  const navigate = useNavigate();
+  // --- Removed navigate ---
 
-  // --- (All your existing state from line 22 to 36) ---
+  // --- (All your existing state) ---
   const [fromId, setFromId] = useState("");
   const [toId, setToId] = useState("");
   const [fromLocation, setFromLocation] = useState<Location | null>(null);
@@ -40,25 +40,14 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [warning, setWarning] = useState("");
 
-  // --- 3. Add the sign-out handler ---
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      // Reload the page to clear state and ensure user is logged out
-      navigate(0); 
-    } catch (error) {
-      console.error("Failed to sign out:", error);
-    }
-  };
+  // --- (handleSignOut removed, it's in UserNav now) ---
 
-  // --- (All your existing functions from line 39 to 157) ---
-  // Update city when location changes
+  // --- (All your existing functions: handleFromLocationSelect, handleToLocationSelect, canPredict, onPredict) ---
   const handleFromLocationSelect = (location: Location | null) => {
     setFromLocation(location);
     if (location) {
       const city = location.id.startsWith("ny_") ? "new_york" : "san_francisco";
       setCurrentCity(city);
-      // Clear destination if it's from a different city
       if (
         toLocation &&
         toLocation.id.startsWith(city === "new_york" ? "sf_" : "ny_")
@@ -75,8 +64,6 @@ export default function Home() {
       const city = location.id.startsWith("ny_") ? "new_york" : "san_francisco";
       setCurrentCity(city);
     }
-
-    // Show warning if same as start
     if (fromLocation && location?.id === fromLocation.id) {
       setWarning(
         "Start and End locations cannot be the same. Please select different locations."
@@ -87,26 +74,24 @@ export default function Home() {
   };
 
   const canPredict = Boolean(
-    fromLocation && toLocation && travelDate && fromLocation.id !== toLocation.id
+    fromLocation && toLocation && travelDate && fromLocation?.id !== toLocation?.id
   );
 
   const onPredict = async () => {
     if (!fromLocation || !toLocation || !travelDate) return;
 
-    // Show warning if start and end are the same
     if (fromLocation.id === toLocation.id) {
       setWarning(
         "Start and End locations cannot be the same. Please select different locations."
       );
       return;
     } else {
-      setWarning(""); // Clear warning if valid
+      setWarning("");
     }
 
     setIsLoading(true);
     const isMobile = window.innerWidth <= 768;
 
-    // Validate that both locations are within the same city
     const isFromNY = fromLocation.id.startsWith("ny_");
     const isFromSF = fromLocation.id.startsWith("sf_");
     const isToNY = toLocation.id.startsWith("ny_");
@@ -137,15 +122,19 @@ export default function Home() {
         }
         setIsLoading(false);
         return;
+      } else {
+        // Handle cases where response.minutes is not a valid number
+        console.error("Invalid prediction value received:", response.minutes);
+        alert("Received an invalid prediction value. Please try again.");
       }
     } catch (error) {
       console.error("Prediction API error:", error);
-      // If API fails, show error message instead of fallback calculation
       alert("Unable to predict travel time. Please try again later.");
     }
     
-    setIsLoading(false);
+    setIsLoading(false); // Ensure loading is set to false even if prediction fails
   };
+
 
   const resultRef = useRef<HTMLDivElement | null>(null);
 
@@ -162,7 +151,7 @@ export default function Home() {
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
-      {/* --- (Background Pattern divs) --- */}
+      {/* Background Pattern */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.6 }}
@@ -198,40 +187,41 @@ export default function Home() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="flex items-center gap-3"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary shadow-soft">
-            <Car className="h-5 w-5" />
-          </div>
-          <span className="text-base font-semibold tracking-tight">
-            GoPredict
-          </span>
+          {/* Make logo link to home */}
+          <Link to="/" className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary shadow-soft">
+              <Car className="h-5 w-5" />
+            </div>
+            <span className="text-base font-semibold tracking-tight">
+              GoPredict
+            </span>
+          </Link>
         </motion.div>
         
-        {/* --- 4. Update this section for conditional auth button --- */}
+        {/* --- Section for conditional auth button --- */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           className="flex items-center gap-2" // Kept flex and gap
         >
-          {/* --- Conditionally show Sign In or Sign Out --- */}
+          {/* Conditionally show UserNav or Sign In */}
           {user ? (
-            <Button variant="outline" onClick={handleSignOut}>
-              Sign Out
-            </Button>
+            <UserNav />
           ) : (
             <Link to="/sign-in">
               <Button variant="outline">Sign In</Button>
             </Link>
           )}
-          {/* --- End of change --- */}
+          {/* End of change */}
           
           <ThemeToggle />
         </motion.div>
-        {/* --- End of modification --- */}
+        {/* End of modification */}
         
       </motion.header>
 
-      {/* --- (Rest of your Main Content and Footer) --- */}
+      {/* Main Content */}
       <main className="container mx-auto flex-1 px-4 pb-4 pt-2">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -332,7 +322,6 @@ export default function Home() {
                             const total = Math.round(predicted);
                             const hours = Math.floor(total / 60);
                             const mins = total % 60;
-                            // If 60 minutes exactly, roll up to 1h 0m
                             const adjHours = mins === 60 ? hours + 1 : hours;
                             const adjMins = mins === 60 ? 0 : mins;
                             return `${adjHours}h ${adjMins}m`;
@@ -395,7 +384,7 @@ export default function Home() {
                 bg-red-100 text-red-700 border-red-300
                 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
               >
-                <span className="h-4 w-4" />
+                <span className="h-4 w-4" /> {/* Consider adding an icon here */}
                 {warning}
               </div>
             )}
@@ -415,6 +404,8 @@ export default function Home() {
                   setToLocation(null);
                   setFromId('');
                   setToId('');
+                  setPredicted(null); // Clear prediction when city changes
+                  setAnimKey(0);
                 }}
               >
                 New York City
@@ -427,6 +418,8 @@ export default function Home() {
                   setToLocation(null);
                   setFromId('');
                   setToId('');
+                  setPredicted(null); // Clear prediction when city changes
+                  setAnimKey(0);
                 }}
               >
                 San Francisco
@@ -496,5 +489,3 @@ export default function Home() {
     </div>
   );
 }
-
-

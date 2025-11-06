@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -10,10 +10,10 @@ import {
   // --- 1. Import the function to check email ---
   fetchSignInMethodsForEmail
 } from 'firebase/auth';
-import { auth } from '@/firebase';
+import { auth } from '../firebase';
 import { motion } from 'framer-motion';
 import { Car } from 'lucide-react';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { ThemeToggle } from '../components/ui/theme-toggle';
 
 // --- SVG Icons (Google, GitHub) ---
 const IconGoogle = () => (
