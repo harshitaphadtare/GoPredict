@@ -6,6 +6,7 @@ node_modules/
 .env.local
 .env.*.local
 gopredict-env/
+frontend\.env.local
 
 # Python
 __pycache__/
@@ -109,3 +110,4 @@ frontend/.vite-temp/
 # Project specific
 notebooks/gmaps/
 data/processed/
+backend/config/serviceAccountKey.json 
