@@ -173,25 +173,25 @@ const SignIn: React.FC = () => {
               </div>
 
               <div>
-                <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="text-sm font-medium">Password</label>
+                <label htmlFor="password" className="text-sm font-medium">Password</label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'} // Toggle between 'text' and 'password'
+                    required
+                    className="mt-1 pr-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                  />
                   <button
                     type="button"
-                    className="text-sm font-medium text-primary hover:underline"
+                    className="absolute inset-y-0 right-3 flex items-center text-muted-foreground"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4 inline" /> : <Eye className="h-4 w-4 inline" />}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'} // Toggle between 'text' and 'password'
-                  required
-                  className="mt-1"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                />
               </div>
 
               {/* --- 3. Error message will now show the helpful text --- */}
